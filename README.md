@@ -1,11 +1,12 @@
-# WristAssist
+# wristassist
 
-On-device voice-to-text for Apple Watch. Record on your wrist, transcribe on your phone. No cloud. No network. Runs [WhisperKit](https://github.com/argmaxinc/WhisperKit) (Whisper Tiny) entirely on-device via CoreML.
+voice notes on your apple watch. transcribes on-device with [whisperkit](https://github.com/argmaxinc/WhisperKit). no cloud. no network. your words stay on your phone.
 
-## Overview
+## how it works
 
 ```
-┌─ Apple Watch ──────────────┐          ┌─ iPhone ─────────────────────────┐
+watch                                    phone
+┌────────────────────────────┐          ┌──────────────────────────────────┐
 │                            │          │                                  │
 │  RecordingView             │  .wav    │  ContentView                     │
 │  AudioRecorderService ─────────────▶  PhoneConnectivityManager          │
@@ -15,51 +16,51 @@ On-device voice-to-text for Apple Watch. Record on your wrist, transcribe on you
 └────────────────────────────┘          └──────────────────────────────────┘
 ```
 
-Watch records 16kHz mono PCM → transfers via `WCSession.transferFile()` → iPhone runs Whisper inference → sends transcription back via `sendMessage()` (realtime) or `transferUserInfo()` (background fallback).
+record 16kHz mono pcm on watch → `WCSession.transferFile()` → whisper inference on phone → transcription back via `sendMessage()` or `transferUserInfo()` fallback
 
-## Project Structure
+## structure
 
 ```
 WristAssist/
 ├── Shared/
-│   └── ConnectivityConstants.swift       # WatchConnectivity message keys
-├── WristAssist/                          # iOS target
+│   └── ConnectivityConstants.swift       # ipc message keys
+├── WristAssist/                          # ios target
 │   ├── WristAssistApp.swift
-│   ├── ContentView.swift                 # Transcription list UI
-│   ├── TranscriptionService.swift        # WhisperKit wrapper
-│   ├── PhoneConnectivityManager.swift    # WCSession delegate, persistence
-│   └── Models/openai_whisper-tiny/       # Bundled CoreML models
+│   ├── ContentView.swift                 # transcription list ui
+│   ├── TranscriptionService.swift        # whisperkit wrapper
+│   ├── PhoneConnectivityManager.swift    # wcsession delegate, persistence
+│   └── Models/openai_whisper-tiny/       # bundled coreml models
 │       ├── AudioEncoder.mlmodelc
 │       ├── MelSpectrogram.mlmodelc
 │       └── TextDecoder.mlmodelc
-└── WristAssist Watch App/                # watchOS target
+└── WristAssist Watch App/                # watchos target
     ├── WristAssistWatchApp.swift
-    ├── RecordingView.swift               # Record button + status UI
-    ├── AudioRecorderService.swift        # AVAudioRecorder (16kHz/16-bit/mono)
-    ├── WatchConnectivityManager.swift    # File transfer + message handling
+    ├── RecordingView.swift               # record button + status
+    ├── AudioRecorderService.swift        # AVAudioRecorder 16kHz/16-bit/mono
+    ├── WatchConnectivityManager.swift    # file transfer + messaging
     └── ExtendedSessionManager.swift      # WKExtendedRuntimeSession
 ```
 
-## Setup
+## setup
 
 ```bash
 git clone https://github.com/realworldbuilder/wristassist.git
 open WristAssist/WristAssist.xcodeproj
 ```
 
-SPM resolves [WhisperKit](https://github.com/argmaxinc/WhisperKit) (`>=0.9.0`) automatically. The Whisper Tiny model is bundled in-app — no download step.
+spm pulls [whisperkit](https://github.com/argmaxinc/WhisperKit) `>=0.9.0` automatically. whisper tiny model is bundled — no download step.
 
-**Targets:** iOS 17.0+ / watchOS 10.0+
+ios 17+ / watchos 10+
 
-## Technical Notes
+## details
 
-- **Audio format:** Linear PCM, 16kHz sample rate, 16-bit depth, mono — optimized for Whisper input
-- **Model loading:** Async on first launch from bundle path, no network fetch (`download: false`)
-- **Persistence:** Transcriptions saved to `Documents/transcriptions.json` (Codable)
-- **Threading:** All observable objects are `@MainActor`; ML inference runs async
-- **Watch runtime:** `WKExtendedRuntimeSession` keeps the watch awake during transfer
-- **Connectivity:** Dual-path — `sendMessage()` when reachable, `transferUserInfo()` as fallback, 60s timeout
+- **audio** — linear pcm, 16kHz, 16-bit, mono. optimized for whisper input
+- **model** — loaded async from bundle on first launch. no network fetch (`download: false`)
+- **storage** — `Documents/transcriptions.json`, codable
+- **threading** — `@MainActor` everywhere, ml inference runs async
+- **watch runtime** — `WKExtendedRuntimeSession` keeps watch awake during transfer
+- **connectivity** — `sendMessage()` when reachable, `transferUserInfo()` fallback, 60s timeout
 
-## License
+## license
 
-[MIT](LICENSE)
+[mit](LICENSE)
