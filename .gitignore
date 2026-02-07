@@ -10,3 +10,16 @@ build/
 
 # macOS
 .DS_Store
+
+# Secrets & credentials
+.env
+.env.*
+*.p8
+*.p12
+*.pem
+*.key
+*.cer
+.wristassist_env
+
+# Private keys directory (if ever created locally)
+private_keys/
