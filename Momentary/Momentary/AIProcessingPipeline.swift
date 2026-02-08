@@ -52,11 +52,13 @@ final class AIProcessingPipeline {
         }
 
         guard let duration = session.duration, duration > 0 else {
+            Self.logger.error("Workout \(session.id) has no duration — endedAt: \(String(describing: session.endedAt))")
             state = .failed("Workout has no duration")
             return
         }
 
         if !isNetworkAvailable {
+            Self.logger.info("Network unavailable — queuing workout \(session.id) for later")
             queueForLater(session)
             state = .queued
             return
@@ -82,10 +84,13 @@ final class AIProcessingPipeline {
                 }
 
                 state = .processing(stage: "Generating structured log and content...")
+                Self.logger.info("Sending API request for workout \(session.id) (attempt \(attempt + 1)/\(self.maxRetries))")
                 let responseJSON = try await backend.complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+                Self.logger.info("Received API response for workout \(session.id) — \(responseJSON.count) characters")
 
                 state = .processing(stage: "Parsing response...")
                 let output = try parseResponse(responseJSON)
+                Self.logger.info("Parsed response for workout \(session.id): \(output.structuredLog.exercises.count) exercises, \(output.stories.count) stories")
 
                 var updatedSession = session
                 updatedSession.structuredLog = output.structuredLog
@@ -99,6 +104,7 @@ final class AIProcessingPipeline {
 
             } catch let error as AIProcessingError {
                 lastError = error
+                Self.logger.error("AIProcessingError for workout \(session.id) (attempt \(attempt + 1)): \(error.localizedDescription)")
                 if case .rateLimited(let retryAfter) = error {
                     state = .processing(stage: "Rate limited, waiting \(Int(retryAfter))s...")
                     try? await Task.sleep(for: .seconds(retryAfter))
@@ -110,6 +116,7 @@ final class AIProcessingPipeline {
                 }
             } catch {
                 lastError = error
+                Self.logger.error("Unexpected error for workout \(session.id) (attempt \(attempt + 1)): \(error.localizedDescription)")
             }
         }
 
@@ -122,6 +129,7 @@ final class AIProcessingPipeline {
 
     private func parseResponse(_ json: String) throws -> AIWorkoutOutput {
         guard let data = json.data(using: .utf8) else {
+            Self.logger.error("Parse failed: response is not valid UTF-8 (\(json.count) chars)")
             throw AIProcessingError.parsingFailed("Invalid UTF-8")
         }
 
@@ -129,6 +137,7 @@ final class AIProcessingPipeline {
         do {
             return try decoder.decode(AIWorkoutOutput.self, from: data)
         } catch {
+            Self.logger.error("Parse failed: \(error.localizedDescription) — response was \(json.count) chars")
             throw AIProcessingError.parsingFailed(error.localizedDescription)
         }
     }

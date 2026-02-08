@@ -81,7 +81,7 @@ struct HomeView: View {
     // MARK: - Main Content
 
     private var mainContent: some View {
-        List(selection: $selectedWorkouts) {
+        List(selection: editMode.isEditing ? $selectedWorkouts : nil) {
             if workoutManager.activeSession != nil {
                 activeWorkoutBanner
             } else {

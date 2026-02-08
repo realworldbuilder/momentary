@@ -72,11 +72,9 @@ enum AIPromptBuilder {
           "structuredLog": {
             "exercises": [
               {
-                "id": "uuid-string",
                 "exerciseName": "Exercise Name",
                 "sets": [
                   {
-                    "id": "uuid-string",
                     "setNumber": 1,
                     "reps": 10,
                     "weight": 135.0,
@@ -92,7 +90,6 @@ enum AIPromptBuilder {
             "highlights": ["Notable achievements"],
             "ambiguities": [
               {
-                "id": "uuid-string",
                 "field": "weight",
                 "rawTranscript": "the original text",
                 "bestGuess": "135 lbs",
@@ -104,13 +101,12 @@ enum AIPromptBuilder {
             "igCaptions": ["Instagram caption 1"],
             "tweetThread": ["Tweet 1", "Tweet 2"],
             "reelScript": "Reel script text",
-            "storyCards": [{"id": "uuid", "title": "Title", "body": "Body"}],
+            "storyCards": [{"title": "Title", "body": "Body"}],
             "hooks": ["Hook line 1"],
             "takeaways": ["Takeaway 1"]
           },
           "stories": [
             {
-              "id": "uuid-string",
               "title": "Story Title",
               "body": "Story body text",
               "tags": ["strength", "chest"],

@@ -13,9 +13,14 @@ struct WorkoutDetailView: View {
         return false
     }
 
+    private var isFailed: Bool {
+        if case .failed = aiPipeline.state { return true }
+        return false
+    }
+
     private var canAnalyze: Bool {
         guard let session else { return false }
-        return !session.moments.isEmpty && session.structuredLog == nil && !isProcessing
+        return !session.moments.isEmpty && session.structuredLog == nil && !isProcessing && !isFailed
     }
 
     var body: some View {
@@ -32,7 +37,7 @@ struct WorkoutDetailView: View {
             session = workoutManager.workoutStore.loadSession(id: workoutID)
         }
         .onChange(of: aiPipeline.state) {
-            if aiPipeline.state == .completed {
+            if aiPipeline.state == .completed || isFailed {
                 session = workoutManager.workoutStore.loadSession(id: workoutID)
             }
         }
@@ -64,6 +69,46 @@ struct WorkoutDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
+                }
+            }
+
+            if case .failed(let message) = aiPipeline.state {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Analysis Failed", systemImage: "exclamationmark.triangle.fill")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.red)
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            Task { await analyzeWorkout() }
+                        } label: {
+                            Label("Retry", systemImage: "arrow.clockwise")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
+            if aiPipeline.state == .queued {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "clock.fill")
+                            .foregroundStyle(.orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Queued for Processing")
+                                .font(.subheadline.bold())
+                            Text("Will process automatically when back online.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
                 }
             }
 
