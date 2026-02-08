@@ -1,0 +1,191 @@
+import Foundation
+import os
+import WatchKit
+
+@Observable
+@MainActor
+final class WatchWorkoutManager {
+    private static let logger = Logger(subsystem: "com.whussey.momentary.watchkitapp", category: "WatchWorkoutManager")
+
+    let recorder = AudioRecorderService()
+    let connectivity = WatchConnectivityManager()
+    let extendedSession = ExtendedSessionManager()
+
+    var isWorkoutActive = false
+    var currentWorkoutID: UUID?
+    var momentCount = 0
+    var elapsedTime: TimeInterval = 0
+    var latestTranscriptSnippet: String?
+    var isRecordingMoment = false
+    var lastError: String?
+    var didReceiveRemoteStop = false
+
+    private var workoutStartTime: Date?
+    private var elapsedTimer: Timer?
+
+    var healthKitService: HealthKitService?
+
+    init() {
+        setupConnectivityCallbacks()
+    }
+
+    // MARK: - Workout Lifecycle
+
+    func startWorkout() {
+        let workoutID = UUID()
+        currentWorkoutID = workoutID
+        isWorkoutActive = true
+        momentCount = 0
+        elapsedTime = 0
+        latestTranscriptSnippet = nil
+        lastError = nil
+        workoutStartTime = Date()
+
+        extendedSession.startSession()
+        startElapsedTimer()
+
+        let message = WorkoutMessage(command: .start, workoutID: workoutID)
+        connectivity.sendWorkoutCommand(message)
+        connectivity.updateWorkoutContext(workoutID: workoutID, isActive: true, startedAt: workoutStartTime!)
+
+        Task {
+            await healthKitService?.startWorkout()
+        }
+
+        Self.logger.info("Started workout \(workoutID)")
+    }
+
+    func endWorkout() {
+        guard let workoutID = currentWorkoutID else { return }
+
+        let message = WorkoutMessage(command: .stop, workoutID: workoutID)
+        connectivity.sendWorkoutCommand(message)
+        connectivity.updateWorkoutContext(workoutID: workoutID, isActive: false, startedAt: nil)
+
+        Task {
+            await healthKitService?.endWorkout()
+        }
+
+        stopElapsedTimer()
+        extendedSession.endSession()
+
+        Self.logger.info("Ended workout \(workoutID)")
+    }
+
+    func completeWorkoutDismissal() {
+        isWorkoutActive = false
+        currentWorkoutID = nil
+        momentCount = 0
+        elapsedTime = 0
+        latestTranscriptSnippet = nil
+        workoutStartTime = nil
+        didReceiveRemoteStop = false
+    }
+
+    // MARK: - Moment Recording
+
+    func recordMoment() {
+        guard isWorkoutActive, !isRecordingMoment else { return }
+        isRecordingMoment = true
+        _ = recorder.startRecording()
+    }
+
+    func stopRecordingMoment() {
+        guard isRecordingMoment else { return }
+        isRecordingMoment = false
+
+        guard let (url, momentID) = recorder.stopRecording(),
+              let workoutID = currentWorkoutID else { return }
+
+        momentCount += 1
+        connectivity.transferMomentAudio(at: url, momentID: momentID, workoutID: workoutID)
+
+        let message = WorkoutMessage(
+            command: .momentRecorded,
+            workoutID: workoutID,
+            momentID: momentID
+        )
+        connectivity.sendWorkoutCommand(message)
+
+        WKInterfaceDevice.current().play(.success)
+    }
+
+    // MARK: - Elapsed Timer
+
+    private func startElapsedTimer() {
+        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, let start = self.workoutStartTime else { return }
+                self.elapsedTime = Date().timeIntervalSince(start)
+            }
+        }
+    }
+
+    private func stopElapsedTimer() {
+        elapsedTimer?.invalidate()
+        elapsedTimer = nil
+    }
+
+    // MARK: - Connectivity
+
+    private func setupConnectivityCallbacks() {
+        connectivity.onWorkoutCommand = { [weak self] message in
+            guard let self else { return }
+            switch message.command {
+            case .start:
+                if !self.isWorkoutActive {
+                    self.currentWorkoutID = message.workoutID
+                    self.isWorkoutActive = true
+                    self.momentCount = 0
+                    self.elapsedTime = 0
+                    self.latestTranscriptSnippet = nil
+                    self.lastError = nil
+                    self.workoutStartTime = message.timestamp
+                    self.extendedSession.startSession()
+                    self.startElapsedTimer()
+                    Task { await self.healthKitService?.startWorkout() }
+                    self.connectivity.updateWorkoutContext(workoutID: message.workoutID, isActive: true, startedAt: message.timestamp)
+                }
+            case .stop:
+                if self.currentWorkoutID == message.workoutID {
+                    self.stopElapsedTimer()
+                    self.extendedSession.endSession()
+                    Task { await self.healthKitService?.endWorkout() }
+                    self.didReceiveRemoteStop = true
+                    self.connectivity.updateWorkoutContext(workoutID: message.workoutID, isActive: false, startedAt: nil)
+                }
+            case .momentTranscribed:
+                if let transcript = message.transcript {
+                    self.latestTranscriptSnippet = transcript
+                    self.connectivity.isSending = false
+                } else if let error = message.error {
+                    self.lastError = error
+                    self.connectivity.isSending = false
+                }
+            case .momentRecorded:
+                break
+            }
+        }
+
+        connectivity.onReceivedWorkoutContext = { [weak self] workoutID, isActive, startedAt in
+            guard let self else { return }
+            if isActive, let workoutID, !self.isWorkoutActive {
+                self.currentWorkoutID = workoutID
+                self.isWorkoutActive = true
+                self.momentCount = 0
+                self.elapsedTime = 0
+                self.latestTranscriptSnippet = nil
+                self.lastError = nil
+                self.workoutStartTime = startedAt ?? Date()
+                self.extendedSession.startSession()
+                self.startElapsedTimer()
+                Task { await self.healthKitService?.startWorkout() }
+            } else if !isActive, self.isWorkoutActive, self.currentWorkoutID == workoutID {
+                self.stopElapsedTimer()
+                self.extendedSession.endSession()
+                Task { await self.healthKitService?.endWorkout() }
+                self.didReceiveRemoteStop = true
+            }
+        }
+    }
+}

@@ -1,43 +1,55 @@
-# WristAssist — App Store Connect Text
+# Momentary — App Store Connect Text
 
 ## App Name
-WristAssist
+Momentary
 
 ## Subtitle
-Voice Notes from Your Wrist
+Workout Notebook for Your Wrist
 
 ## Description
-Record voice notes on your Apple Watch or iPhone and get instant transcriptions — all processed on-device, never uploaded to the cloud.
+Start a workout on your Apple Watch. Log moments by voice. Turn training into insights and content.
 
-WristAssist makes capturing ideas effortless. Tap once on your Apple Watch to start recording, and your voice note is automatically sent to your iPhone for transcription. You can also record directly on your iPhone. Either way, your words become text in seconds.
+Momentary is a wrist-first workout notebook built for lifters who want to capture every set, every PR, and every training thought — without stopping to type. Record short voice "Moments" during your strength training session, and when you're done, AI transforms your voice notes into structured workout logs, social media content, and personalized training insights.
 
 KEY FEATURES
 
-• One-Tap Recording — Start a voice note with a single tap on Apple Watch. No phone needed to begin.
+• Workout Sessions — Start and end strength training sessions right from your Apple Watch with an elapsed timer and moment counter.
 
-• iPhone Recording — Record directly on your iPhone with the floating microphone button.
+• Voice Moments — Tap to record a quick voice note after each set. "Just hit 225 for 5 on bench, felt smooth." That's all you need.
 
-• On-Device Transcription — Speech-to-text powered by WhisperKit runs entirely on your iPhone. No internet required.
+• On-Device Transcription — Speech-to-text powered by WhisperKit runs entirely on your iPhone. No internet required to record and transcribe.
 
-• 100% Private — Your audio and transcriptions never leave your device. No accounts, no cloud uploads, no analytics.
+• AI Workout Log — When your workout ends, OpenAI analyzes your voice transcripts and generates a structured exercise log with exercises, sets, reps, and weights.
 
-• Seamless Transfer — Recordings move automatically from Apple Watch to iPhone over Bluetooth or Wi-Fi.
+• Social Content — Auto-generate Instagram captions, tweet threads, reel scripts, and story cards from your workout. Share your training without the effort.
 
-• Manage Transcriptions — Copy, share, select multiple, or delete. All your notes in one simple list.
+• Training Insights — Get AI-generated progress notes, form reminders, motivational stories, and recovery suggestions based on your actual training.
 
-• Always-On Display — See recording status at a glance on Apple Watch.
+• HealthKit Integration — Your workouts automatically sync to Apple Health as strength training sessions.
 
-PRIVACY FIRST
+• Watch-First Experience — Full workout lifecycle on Apple Watch with haptic feedback when moments are logged. Always-on display shows your workout timer.
 
-WristAssist requires no account and collects no data. The only permission requested is microphone access to record your voice. Audio files are processed locally and transcriptions are stored on your device.
+• Offline Support — Record and transcribe without internet. AI processing queues up and completes when you're back online.
 
-Requires iPhone running iOS 17+ and Apple Watch running watchOS 10+.
+HOW IT WORKS
+
+1. Start a workout on your Apple Watch (or iPhone)
+2. After each set, tap to record a quick voice moment
+3. Your voice is transcribed on-device by WhisperKit
+4. End your workout — AI processes your moments into a structured log
+5. Review your workout log, share content, and read insights
+
+PRIVACY
+
+Audio is transcribed on-device — your voice never leaves your phone. Only workout transcript text is sent to OpenAI for AI processing (requires your own API key). No accounts, no analytics, no tracking.
+
+Requires iPhone running iOS 18+ and Apple Watch running watchOS 11+.
 
 ## Promotional Text
-Record voice notes on Apple Watch or iPhone. Transcriptions happen on-device — no cloud, no accounts, completely private.
+Start a workout on your watch. Log moments by voice. AI turns your training into structured logs, social content, and insights.
 
 ## Keywords
-voice notes,transcription,watch,dictation,speech to text,memo,recorder,whisper,private,on-device
+workout log,voice notes,strength training,gym,fitness,AI,workout tracker,apple watch,training log,lifting
 
 ## Support URL
 https://realworldbuilder.github.io/wristassist/support.html
@@ -55,17 +67,19 @@ https://realworldbuilder.github.io/wristassist/privacy.html
 © 2026 William Hussey
 
 ## Primary Category
-Productivity
+Health & Fitness
 
 ## Secondary Category
-Utilities
+Productivity
 
 ## Notes for Review
-WristAssist requires an Apple Watch paired with an iPhone to demonstrate the full watch-to-phone recording workflow. However, the app also supports recording directly on iPhone — you can test this without an Apple Watch by tapping the green microphone button in the bottom-right corner of the iPhone app.
+Momentary requires an Apple Watch paired with an iPhone to demonstrate the full watch workout workflow. However, the app also supports starting workouts and recording moments directly on iPhone — you can test this without an Apple Watch.
 
-On first launch, the app loads a local speech recognition model (WhisperKit). This may take a few seconds. Once loaded, recording and transcription work entirely offline with no network connection required.
+On first launch, the app loads a local speech recognition model (WhisperKit). This may take a few seconds. Once loaded, recording and transcription work entirely offline.
 
-No account, login, or special configuration is needed.
+AI features (structured workout log, social content, training insights) require an OpenAI API key entered in Settings. Without a key, the app still functions as a voice-based workout logger — you just won't get AI-generated output.
+
+No account, login, or special configuration is needed beyond the optional API key.
 
 ## Review Contact Email
 williamhussey33@gmail.com

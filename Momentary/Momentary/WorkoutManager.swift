@@ -1,0 +1,174 @@
+import Foundation
+import os
+
+@Observable
+@MainActor
+final class WorkoutManager {
+    private static let logger = Logger(subsystem: "com.whussey.momentary", category: "WorkoutManager")
+
+    let workoutStore = WorkoutStore()
+    let connectivityManager = PhoneConnectivityManager()
+    let transcriptionService = TranscriptionService()
+
+    var activeSession: WorkoutSession?
+    var isProcessingMoment = false
+    var lastError: String?
+
+    private var aiPipeline: AIProcessingPipeline?
+    private var endingSessionID: UUID?
+
+    init() {
+        setupConnectivityCallbacks()
+        workoutStore.migrateFromLegacyTranscriptions()
+    }
+
+    func setAIPipeline(_ pipeline: AIProcessingPipeline) {
+        self.aiPipeline = pipeline
+    }
+
+    // MARK: - Workout Lifecycle
+
+    func startWorkout() {
+        let session = WorkoutSession()
+        activeSession = session
+        workoutStore.saveSession(session)
+
+        let message = WorkoutMessage(command: .start, workoutID: session.id)
+        connectivityManager.sendWorkoutMessage(message)
+        connectivityManager.updateWorkoutContext(workoutID: session.id, isActive: true, startedAt: session.startedAt)
+
+        Self.logger.info("Started workout \(session.id)")
+    }
+
+    func endWorkout() {
+        guard var session = activeSession else { return }
+        session.endedAt = Date()
+        workoutStore.saveSession(session)
+        endingSessionID = session.id
+        activeSession = nil
+
+        let message = WorkoutMessage(command: .stop, workoutID: session.id)
+        connectivityManager.sendWorkoutMessage(message)
+        connectivityManager.updateWorkoutContext(workoutID: nil, isActive: false, startedAt: nil)
+
+        Self.logger.info("Ended workout \(session.id), draining in-flight moments")
+
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            self.finalizeEnd(workoutID: session.id)
+        }
+    }
+
+    private func handleRemoteStop(workoutID: UUID) {
+        guard activeSession?.id == workoutID else { return }
+        guard var session = activeSession else { return }
+        session.endedAt = Date()
+        workoutStore.saveSession(session)
+        endingSessionID = session.id
+        activeSession = nil
+        connectivityManager.updateWorkoutContext(workoutID: nil, isActive: false, startedAt: nil)
+
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            self.finalizeEnd(workoutID: session.id)
+        }
+    }
+
+    private func finalizeEnd(workoutID: UUID) {
+        guard endingSessionID == workoutID else { return }
+        let finalSession = workoutStore.loadSession(id: workoutID)
+        endingSessionID = nil
+        if let finalSession {
+            Task { await aiPipeline?.processWorkout(finalSession) }
+        }
+    }
+
+    // MARK: - Moment Management
+
+    func addMoment(audioURL: URL, source: MomentSource, momentID: UUID? = nil) async {
+        let workoutID: UUID
+        if let active = activeSession {
+            workoutID = active.id
+        } else if let ending = endingSessionID {
+            workoutID = ending
+        } else {
+            return
+        }
+        await processAudioMoment(audioURL: audioURL, source: source, momentID: momentID, workoutID: workoutID)
+    }
+
+    private func processAudioMoment(audioURL: URL, source: MomentSource, momentID: UUID?, workoutID: UUID) async {
+        isProcessingMoment = true
+        defer { isProcessingMoment = false }
+
+        let mID = momentID ?? UUID()
+        _ = workoutStore.storeAudioFile(from: audioURL, momentID: mID, workoutID: workoutID)
+        let result = await transcriptionService.transcribe(audioURL: audioURL)
+
+        var moment = Moment(id: mID, timestamp: Date(), transcript: "", source: source)
+
+        switch result {
+        case .success(let text):
+            moment.transcript = text
+        case .failure(let error):
+            moment.transcript = "[Transcription failed]"
+            moment.confidence = 0
+            lastError = error.localizedDescription
+        }
+
+        // Load-modify-save from store (safe since @MainActor)
+        guard var session = workoutStore.loadSession(id: workoutID) else { return }
+        session.moments.append(moment)
+        workoutStore.saveSession(session)
+        if activeSession?.id == workoutID { activeSession = session }
+
+        if source == .watch, case .success(let text) = result {
+            connectivityManager.sendTranscriptionToWatch(text, momentID: mID, workoutID: workoutID)
+        } else if source == .watch, case .failure = result {
+            connectivityManager.sendErrorToWatch(lastError ?? "Transcription failed", workoutID: workoutID)
+        }
+
+        try? FileManager.default.removeItem(at: audioURL)
+    }
+
+    // MARK: - Connectivity Callbacks
+
+    private func setupConnectivityCallbacks() {
+        connectivityManager.onAudioReceived = { [weak self] url, momentID, workoutID in
+            guard let self else { return }
+            await self.addMoment(audioURL: url, source: .watch, momentID: momentID)
+        }
+
+        connectivityManager.onWorkoutCommand = { [weak self] message in
+            guard let self else { return }
+            switch message.command {
+            case .start:
+                if self.activeSession == nil {
+                    let session = WorkoutSession(id: message.workoutID, startedAt: message.timestamp)
+                    self.activeSession = session
+                    self.workoutStore.saveSession(session)
+                    self.connectivityManager.updateWorkoutContext(workoutID: message.workoutID, isActive: true, startedAt: message.timestamp)
+                }
+            case .stop:
+                if self.activeSession?.id == message.workoutID {
+                    self.handleRemoteStop(workoutID: message.workoutID)
+                }
+            case .momentRecorded:
+                break
+            case .momentTranscribed:
+                break
+            }
+        }
+
+        connectivityManager.onReceivedWorkoutContext = { [weak self] workoutID, isActive, startedAt in
+            guard let self else { return }
+            if isActive, let workoutID, self.activeSession == nil, self.endingSessionID == nil {
+                let session = WorkoutSession(id: workoutID, startedAt: startedAt ?? Date())
+                self.activeSession = session
+                self.workoutStore.saveSession(session)
+            } else if !isActive, let activeID = self.activeSession?.id, activeID == workoutID {
+                self.handleRemoteStop(workoutID: activeID)
+            }
+        }
+    }
+}
