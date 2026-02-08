@@ -1,20 +1,20 @@
 #!/bin/bash
 
-# WristAssist TestFlight Deployment Script
+# Momentary TestFlight Deployment Script
 # Automates: Clean -> Build Number Increment -> Archive -> Export IPA -> Upload to TestFlight
 
 set -e
 
 # ========== Configuration ==========
-PROJECT_NAME="WristAssist"
-SCHEME_NAME="WristAssist"
-BUNDLE_ID="com.wristassist.app"
+PROJECT_NAME="Momentary"
+SCHEME_NAME="Momentary"
+BUNDLE_ID="com.whussey.momentary"
 TEAM_ID="R2C4T4N7US"
 
 # Resolve repo root (Scripts/ lives one level below)
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PROJECT_PATH="$REPO_ROOT/WristAssist/WristAssist.xcodeproj"
-PROJECT_DIR="$REPO_ROOT/WristAssist"
+PROJECT_PATH="$REPO_ROOT/Momentary/Momentary.xcodeproj"
+PROJECT_DIR="$REPO_ROOT/Momentary"
 EXPORT_OPTIONS_PLIST="$REPO_ROOT/ExportOptions.plist"
 
 ARCHIVE_PATH="$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)/${PROJECT_NAME}.xcarchive"
@@ -22,7 +22,9 @@ EXPORT_PATH="$HOME/Desktop/${PROJECT_NAME}-Export"
 IPA_PATH="${EXPORT_PATH}/${PROJECT_NAME}.ipa"
 
 # Load API credentials
-if [ -f "$HOME/.wristassist_env" ]; then
+if [ -f "$HOME/.momentary_env" ]; then
+    source "$HOME/.momentary_env"
+elif [ -f "$HOME/.wristassist_env" ]; then
     source "$HOME/.wristassist_env"
 fi
 
@@ -42,7 +44,7 @@ NC='\033[0m'
 print_header() {
     echo ""
     echo -e "${BLUE}================================================${NC}"
-    echo -e "${BLUE}   WristAssist TestFlight Deployment${NC}"
+    echo -e "${BLUE}   Momentary TestFlight Deployment${NC}"
     echo -e "${BLUE}================================================${NC}"
     echo ""
 }
