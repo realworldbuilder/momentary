@@ -2,10 +2,21 @@ import SwiftUI
 
 struct WorkoutDetailView: View {
     @Environment(WorkoutManager.self) private var workoutManager
+    @Environment(AIProcessingPipeline.self) private var aiPipeline
     let workoutID: UUID
 
     @State private var session: WorkoutSession?
     @State private var copyFeedbackTrigger = false
+
+    private var isProcessing: Bool {
+        if case .processing = aiPipeline.state { return true }
+        return false
+    }
+
+    private var canAnalyze: Bool {
+        guard let session else { return false }
+        return !session.moments.isEmpty && session.structuredLog == nil && !isProcessing
+    }
 
     var body: some View {
         Group {
@@ -20,6 +31,22 @@ struct WorkoutDetailView: View {
         .onAppear {
             session = workoutManager.workoutStore.loadSession(id: workoutID)
         }
+        .onChange(of: aiPipeline.state) {
+            if aiPipeline.state == .completed {
+                session = workoutManager.workoutStore.loadSession(id: workoutID)
+            }
+        }
+        .toolbar {
+            if canAnalyze {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        Task { await analyzeWorkout() }
+                    } label: {
+                        Label("Analyze", systemImage: "sparkles")
+                    }
+                }
+            }
+        }
         .sensoryFeedback(.success, trigger: copyFeedbackTrigger)
     }
 
@@ -28,6 +55,17 @@ struct WorkoutDetailView: View {
     private func detailContent(_ session: WorkoutSession) -> some View {
         List {
             summarySection(session)
+
+            if isProcessing, case .processing(let stage) = aiPipeline.state {
+                Section {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text(stage)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
 
             if !session.moments.isEmpty {
                 momentsSection(session)
@@ -234,6 +272,13 @@ struct WorkoutDetailView: View {
                 .padding(.vertical, 4)
             }
         }
+    }
+
+    // MARK: - Actions
+
+    private func analyzeWorkout() async {
+        guard let session = workoutManager.workoutStore.loadSession(id: workoutID) else { return }
+        await aiPipeline.processWorkout(session)
     }
 
     // MARK: - Helpers
