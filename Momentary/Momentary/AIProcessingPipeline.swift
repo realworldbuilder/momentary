@@ -128,8 +128,23 @@ final class AIProcessingPipeline {
     // MARK: - Parse Response
 
     private func parseResponse(_ json: String) throws -> AIWorkoutOutput {
-        guard let data = json.data(using: .utf8) else {
-            Self.logger.error("Parse failed: response is not valid UTF-8 (\(json.count) chars)")
+        // Strip markdown code fences that GPT sometimes wraps around JSON
+        var cleaned = json.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleaned.hasPrefix("```") {
+            // Remove opening fence (```json or ```)
+            if let firstNewline = cleaned.firstIndex(of: "\n") {
+                cleaned = String(cleaned[cleaned.index(after: firstNewline)...])
+            }
+            // Remove closing fence
+            if cleaned.hasSuffix("```") {
+                cleaned = String(cleaned.dropLast(3)).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+
+        Self.logger.debug("Raw JSON prefix (\(cleaned.count) chars): \(String(cleaned.prefix(500)))")
+
+        guard let data = cleaned.data(using: .utf8) else {
+            Self.logger.error("Parse failed: response is not valid UTF-8 (\(cleaned.count) chars)")
             throw AIProcessingError.parsingFailed("Invalid UTF-8")
         }
 
@@ -137,8 +152,33 @@ final class AIProcessingPipeline {
         do {
             return try decoder.decode(AIWorkoutOutput.self, from: data)
         } catch {
-            Self.logger.error("Parse failed: \(error.localizedDescription) — response was \(json.count) chars")
-            throw AIProcessingError.parsingFailed(error.localizedDescription)
+            let detail = Self.describeDecodingError(error)
+            Self.logger.error("Parse failed: \(detail) — response was \(cleaned.count) chars")
+            throw AIProcessingError.parsingFailed(detail)
+        }
+    }
+
+    private static func describeDecodingError(_ error: Error) -> String {
+        switch error {
+        case let e as DecodingError:
+            switch e {
+            case .keyNotFound(let key, let ctx):
+                let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+                return "Missing key '\(key.stringValue)' at path '\(path)'"
+            case .typeMismatch(let type, let ctx):
+                let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+                return "Type mismatch: expected \(type) at path '\(path)' — \(ctx.debugDescription)"
+            case .valueNotFound(let type, let ctx):
+                let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+                return "Null value for \(type) at path '\(path)'"
+            case .dataCorrupted(let ctx):
+                let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+                return "Data corrupted at path '\(path)' — \(ctx.debugDescription)"
+            @unknown default:
+                return e.localizedDescription
+            }
+        default:
+            return error.localizedDescription
         }
     }
 

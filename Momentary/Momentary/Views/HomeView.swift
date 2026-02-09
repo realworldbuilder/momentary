@@ -1,9 +1,7 @@
-import AVFoundation
 import SwiftUI
 
 struct HomeView: View {
     @Environment(WorkoutManager.self) private var workoutManager
-    @StateObject private var recorder = PhoneAudioRecorderService()
     @State private var editMode: EditMode = .inactive
     @State private var showDeleteConfirmation = false
     @State private var selectedWorkouts = Set<UUID>()
@@ -88,11 +86,15 @@ struct HomeView: View {
                 startWorkoutCard
             }
 
+            if !workoutManager.workoutStore.index.isEmpty {
+                weeklySummaryCard
+            }
+
             if workoutManager.workoutStore.index.isEmpty {
                 ContentUnavailableView {
                     Label("No Workouts", systemImage: "figure.strengthtraining.traditional")
                 } description: {
-                    Text("Start a workout to begin logging moments.")
+                    Text("Start a workout and record voice notes during your session. AI will turn your notes into a structured workout log.")
                 }
             } else {
                 Section("Workout History") {
@@ -177,6 +179,51 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Weekly Summary Card
+
+    private var weeklySummaryCard: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("This Week")
+                    .font(.headline)
+
+                let stats = weeklyStats
+                HStack(spacing: 16) {
+                    weeklyStat(value: "\(stats.workoutCount)", label: "Workouts", icon: "flame.fill", color: .orange)
+                    weeklyStat(value: formatVolume(stats.totalVolume), label: "Volume (lbs)", icon: "scalemass.fill", color: .green)
+                    weeklyStat(value: "\(stats.streak)", label: "Day Streak", icon: "flame", color: .red)
+                }
+
+                if !stats.topExercises.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "trophy.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                        Text(stats.topExercises.joined(separator: ", "))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func weeklyStat(value: String, label: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(color)
+            Text(value)
+                .font(.title3.bold())
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Workout Row
 
     private func workoutRow(_ entry: WorkoutSessionIndex) -> some View {
@@ -187,7 +234,12 @@ struct HomeView: View {
                 if let duration = entry.duration {
                     Label(formatDuration(duration), systemImage: "clock")
                 }
-                Label("\(entry.momentCount) moment\(entry.momentCount == 1 ? "" : "s")", systemImage: "waveform")
+                if entry.exerciseCount > 0 {
+                    Label("\(entry.exerciseCount) exercises", systemImage: "figure.strengthtraining.traditional")
+                }
+                if entry.totalSets > 0 {
+                    Label("\(entry.totalSets) sets", systemImage: "repeat")
+                }
                 if entry.hasStructuredLog {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
@@ -197,14 +249,74 @@ struct HomeView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
 
-            if !entry.exerciseNames.isEmpty {
-                Text(entry.exerciseNames.joined(separator: ", "))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            HStack(spacing: 8) {
+                if entry.totalVolume > 0 {
+                    Text("\(formatVolume(entry.totalVolume)) lbs")
+                        .font(.caption.bold())
+                        .foregroundStyle(.green)
+                }
+                if !entry.exerciseNames.isEmpty {
+                    Text(entry.exerciseNames.joined(separator: ", "))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
         }
         .padding(.vertical, 2)
+    }
+
+    // MARK: - Weekly Stats
+
+    private struct WeeklyStatsResult {
+        var workoutCount: Int = 0
+        var totalVolume: Double = 0
+        var topExercises: [String] = []
+        var streak: Int = 0
+    }
+
+    private var weeklyStats: WeeklyStatsResult {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) else {
+            return WeeklyStatsResult()
+        }
+
+        let thisWeek = workoutManager.workoutStore.index.filter { $0.startedAt >= weekStart }
+        var exerciseFrequency: [String: Int] = [:]
+        var totalVolume: Double = 0
+
+        for entry in thisWeek {
+            totalVolume += entry.totalVolume
+            for name in entry.exerciseNames {
+                exerciseFrequency[name, default: 0] += 1
+            }
+        }
+
+        let top3 = exerciseFrequency.sorted { $0.value > $1.value }.prefix(3).map(\.key)
+
+        // Streak: consecutive days with workouts going backwards from today
+        var streak = 0
+        var checkDate = calendar.startOfDay(for: now)
+        while true {
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: checkDate)!
+            let hasWorkout = workoutManager.workoutStore.index.contains {
+                $0.startedAt >= checkDate && $0.startedAt < dayEnd
+            }
+            if hasWorkout {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            } else {
+                break
+            }
+        }
+
+        return WeeklyStatsResult(
+            workoutCount: thisWeek.count,
+            totalVolume: totalVolume,
+            topExercises: top3,
+            streak: streak
+        )
     }
 
     // MARK: - Helpers
@@ -224,5 +336,12 @@ struct HomeView: View {
             return "\(hrs)h \(mins)m"
         }
         return "\(mins)m"
+    }
+
+    private func formatVolume(_ volume: Double) -> String {
+        if volume >= 1000 {
+            return String(format: "%.1fk", volume / 1000)
+        }
+        return String(format: "%.0f", volume)
     }
 }

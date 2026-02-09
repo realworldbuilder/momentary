@@ -4,10 +4,17 @@ struct InsightsTab: View {
     @Environment(WorkoutManager.self) private var workoutManager
     @State private var selectedTag: String?
 
+    private struct LinkedInsight: Identifiable {
+        let id: UUID
+        let story: InsightStory
+        let workoutID: UUID
+        let workoutDate: Date
+    }
+
     var body: some View {
         NavigationStack {
             Group {
-                if allStories.isEmpty {
+                if allLinkedInsights.isEmpty {
                     ContentUnavailableView {
                         Label("No Insights Yet", systemImage: "lightbulb")
                     } description: {
@@ -18,27 +25,37 @@ struct InsightsTab: View {
                 }
             }
             .navigationTitle("Insights")
+            .navigationDestination(for: UUID.self) { workoutID in
+                WorkoutDetailView(workoutID: workoutID)
+            }
         }
     }
 
-    private var allStories: [InsightStory] {
-        var stories: [InsightStory] = []
+    private var allLinkedInsights: [LinkedInsight] {
+        var insights: [LinkedInsight] = []
         for entry in workoutManager.workoutStore.index {
             if let session = workoutManager.workoutStore.loadSession(id: entry.id) {
-                stories.append(contentsOf: session.stories)
+                for story in session.stories {
+                    insights.append(LinkedInsight(
+                        id: story.id,
+                        story: story,
+                        workoutID: session.id,
+                        workoutDate: session.startedAt
+                    ))
+                }
             }
         }
-        return stories
+        return insights
     }
 
     private var allTags: [String] {
-        let tags = Set(allStories.flatMap(\.tags))
+        let tags = Set(allLinkedInsights.flatMap(\.story.tags))
         return tags.sorted()
     }
 
-    private var filteredStories: [InsightStory] {
-        guard let tag = selectedTag else { return allStories }
-        return allStories.filter { $0.tags.contains(tag) }
+    private var filteredInsights: [LinkedInsight] {
+        guard let tag = selectedTag else { return allLinkedInsights }
+        return allLinkedInsights.filter { $0.story.tags.contains(tag) }
     }
 
     private var insightsList: some View {
@@ -48,8 +65,10 @@ struct InsightsTab: View {
             }
 
             List {
-                ForEach(filteredStories) { story in
-                    storyCard(story)
+                ForEach(filteredInsights) { linked in
+                    NavigationLink(value: linked.workoutID) {
+                        storyCard(linked)
+                    }
                 }
             }
         }
@@ -73,27 +92,36 @@ struct InsightsTab: View {
         .background(.ultraThinMaterial)
     }
 
-    private func storyCard(_ story: InsightStory) -> some View {
+    private func storyCard(_ linked: LinkedInsight) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(story.title)
+                Text(linked.story.title)
                     .font(.headline)
                 Spacer()
-                Text(categoryLabel(story.type))
+                Text(categoryLabel(linked.story.type))
                     .font(.caption2)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(categoryColor(story.type).opacity(0.15), in: Capsule())
-                    .foregroundStyle(categoryColor(story.type))
+                    .background(categoryColor(linked.story.type).opacity(0.15), in: Capsule())
+                    .foregroundStyle(categoryColor(linked.story.type))
             }
 
-            Text(story.body)
+            Text(linked.story.body)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            if !story.tags.isEmpty {
+            HStack(spacing: 4) {
+                Image(systemName: "dumbbell.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+                Text(linked.workoutDate, format: .dateTime.month(.abbreviated).day())
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+
+            if !linked.story.tags.isEmpty {
                 HStack(spacing: 4) {
-                    ForEach(story.tags, id: \.self) { tag in
+                    ForEach(linked.story.tags, id: \.self) { tag in
                         Text(tag)
                             .font(.caption2)
                             .padding(.horizontal, 6)

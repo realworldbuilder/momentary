@@ -19,9 +19,12 @@ final class WorkoutStore {
         workoutsDirectory.appendingPathComponent("index.json")
     }
 
+    private static let currentIndexVersion = 2
+
     init() {
         ensureDirectoryExists(workoutsDirectory)
         loadIndex()
+        migrateIndexIfNeeded()
     }
 
     // MARK: - Index
@@ -173,6 +176,42 @@ final class WorkoutStore {
         } catch {
             Self.logger.error("Failed to migrate legacy transcriptions: \(error)")
         }
+    }
+
+    // MARK: - Index Migration
+
+    private func migrateIndexIfNeeded() {
+        let currentVersion = UserDefaults.standard.integer(forKey: "workoutIndexVersion")
+        guard currentVersion < Self.currentIndexVersion else { return }
+        rebuildIndex()
+        UserDefaults.standard.set(Self.currentIndexVersion, forKey: "workoutIndexVersion")
+    }
+
+    func rebuildIndex() {
+        guard let contents = try? fileManager.contentsOfDirectory(
+            at: workoutsDirectory,
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
+        ) else { return }
+
+        var rebuilt: [WorkoutSessionIndex] = []
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        for dir in contents where dir.hasDirectoryPath {
+            let sessionFile = dir.appendingPathComponent("session.json")
+            guard fileManager.fileExists(atPath: sessionFile.path),
+                  let data = try? Data(contentsOf: sessionFile),
+                  let session = try? decoder.decode(WorkoutSession.self, from: data) else {
+                continue
+            }
+            rebuilt.append(WorkoutSessionIndex(from: session))
+        }
+
+        rebuilt.sort { $0.startedAt > $1.startedAt }
+        index = rebuilt
+        saveIndex()
+        Self.logger.info("Rebuilt index with \(rebuilt.count) entries")
     }
 
     // MARK: - Helpers

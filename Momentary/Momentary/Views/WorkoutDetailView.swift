@@ -58,95 +58,351 @@ struct WorkoutDetailView: View {
     // MARK: - Detail Content
 
     private func detailContent(_ session: WorkoutSession) -> some View {
-        List {
-            summarySection(session)
-
-            if isProcessing, case .processing(let stage) = aiPipeline.state {
-                Section {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                        Text(stage)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                heroSection(session)
+                aiStatusSection()
+                if let log = session.structuredLog {
+                    exerciseCards(log.exercises)
+                    if !log.summary.isEmpty {
+                        summaryCard(log.summary)
                     }
+                    if !log.highlights.isEmpty {
+                        highlightsCard(log.highlights)
+                    }
+                    if !log.ambiguities.isEmpty {
+                        ambiguitiesCard(log.ambiguities)
+                    }
+                }
+                if let pack = session.contentPack {
+                    contentPackCards(pack)
+                }
+                if !session.stories.isEmpty {
+                    insightsCards(session.stories)
+                }
+                if !session.moments.isEmpty {
+                    transcriptCard(session.moments)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 24)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    // MARK: - Hero Section
+
+    private func heroSection(_ session: WorkoutSession) -> some View {
+        VStack(spacing: 12) {
+            Text(session.startedAt, format: .dateTime.weekday(.wide).month(.wide).day())
+                .font(.title3.bold())
+
+            HStack(spacing: 20) {
+                if let duration = session.duration {
+                    statPill(icon: "clock", value: formatDuration(duration), label: "Duration")
+                }
+                let exercises = session.structuredLog?.exercises ?? []
+                if !exercises.isEmpty {
+                    statPill(icon: "figure.strengthtraining.traditional", value: "\(exercises.count)", label: "Exercises")
+                    let sets = exercises.reduce(0) { $0 + $1.sets.count }
+                    statPill(icon: "repeat", value: "\(sets)", label: "Sets")
                 }
             }
 
-            if case .failed(let message) = aiPipeline.state {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Analysis Failed", systemImage: "exclamationmark.triangle.fill")
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.red)
-                        Text(message)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Button {
-                            Task { await analyzeWorkout() }
-                        } label: {
-                            Label("Retry", systemImage: "arrow.clockwise")
-                                .font(.subheadline.bold())
-                                .frame(maxWidth: .infinity)
+            let volume = computeVolume(session)
+            if volume > 0 {
+                Text("\(formatVolume(volume)) lbs total volume")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.green)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func statPill(icon: String, value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.headline)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - AI Status
+
+    @ViewBuilder
+    private func aiStatusSection() -> some View {
+        if isProcessing, case .processing(let stage) = aiPipeline.state {
+            HStack(spacing: 10) {
+                ProgressView()
+                Text(stage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+
+        if case .failed(let message) = aiPipeline.state {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Analysis Failed", systemImage: "exclamationmark.triangle.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.red)
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button {
+                    Task { await analyzeWorkout() }
+                } label: {
+                    Label("Retry", systemImage: "arrow.clockwise")
+                        .font(.subheadline.bold())
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+            }
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+
+        if aiPipeline.state == .queued {
+            HStack(spacing: 10) {
+                Image(systemName: "clock.fill")
+                    .foregroundStyle(.orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Queued for Processing")
+                        .font(.subheadline.bold())
+                    Text("Will process automatically when back online.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    // MARK: - Exercise Cards
+
+    private func exerciseCards(_ exercises: [ExerciseGroup]) -> some View {
+        ForEach(exercises) { exercise in
+            VStack(alignment: .leading, spacing: 10) {
+                Text(exercise.exerciseName)
+                    .font(.headline)
+
+                // Sets table header
+                HStack {
+                    Text("Set")
+                        .frame(width: 36, alignment: .leading)
+                    Text("Reps")
+                        .frame(width: 50, alignment: .center)
+                    Text("Weight")
+                        .frame(minWidth: 60, alignment: .center)
+                    Spacer()
+                }
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+
+                ForEach(exercise.sets) { set in
+                    HStack {
+                        Text("\(set.setNumber)")
+                            .frame(width: 36, alignment: .leading)
+                        if let reps = set.reps {
+                            Text("\(reps)")
+                                .frame(width: 50, alignment: .center)
+                        } else {
+                            Text("—")
+                                .frame(width: 50, alignment: .center)
+                                .foregroundStyle(.tertiary)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
-            if aiPipeline.state == .queued {
-                Section {
-                    HStack(spacing: 10) {
-                        Image(systemName: "clock.fill")
-                            .foregroundStyle(.orange)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Queued for Processing")
-                                .font(.subheadline.bold())
-                            Text("Will process automatically when back online.")
-                                .font(.caption)
+                        if let weight = set.weight {
+                            Text("\(weight, specifier: "%.0f") \(set.weightUnit.rawValue)")
+                                .frame(minWidth: 60, alignment: .center)
+                        } else {
+                            Text("—")
+                                .frame(minWidth: 60, alignment: .center)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Spacer()
+                        if let notes = set.notes {
+                            Text(notes)
+                                .font(.caption2)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(1)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .font(.subheadline)
+                }
+
+                if let notes = exercise.notes {
+                    Text(notes)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
 
-            if !session.moments.isEmpty {
-                momentsSection(session)
+    // MARK: - Summary Card
+
+    private func summaryCard(_ summary: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Summary", systemImage: "text.quote")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
+            Text(summary)
+                .font(.subheadline)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Highlights
+
+    private func highlightsCard(_ highlights: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Highlights", systemImage: "star.fill")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
+            FlowLayout(spacing: 6) {
+                ForEach(highlights, id: \.self) { highlight in
+                    Text(highlight)
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.green.opacity(0.12), in: Capsule())
+                        .foregroundStyle(.green)
+                }
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
 
-            if let log = session.structuredLog {
-                structuredLogSection(log)
+    // MARK: - Ambiguities
+
+    private func ambiguitiesCard(_ ambiguities: [Ambiguity]) -> some View {
+        DisclosureGroup {
+            ForEach(ambiguities) { ambiguity in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ambiguity.field)
+                        .font(.caption.bold())
+                    Text("Heard: \"\(ambiguity.rawTranscript)\"")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Best guess: \(ambiguity.bestGuess)")
+                        .font(.caption)
+                }
+                .padding(.vertical, 2)
             }
+        } label: {
+            Label("Ambiguities (\(ambiguities.count))", systemImage: "questionmark.circle")
+                .font(.subheadline.bold())
+                .foregroundStyle(.orange)
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
 
-            if let pack = session.contentPack {
-                contentPackSection(pack)
+    // MARK: - Content Pack
+
+    private func contentPackCards(_ pack: ContentPack) -> some View {
+        VStack(spacing: 12) {
+            if !pack.igCaptions.isEmpty {
+                contentDisclosure("Instagram Captions", icon: "camera", items: pack.igCaptions)
             }
-
-            if !session.stories.isEmpty {
-                insightsSection(session.stories)
+            if !pack.tweetThread.isEmpty {
+                contentDisclosure("Tweet Thread", icon: "bubble.left", items: pack.tweetThread)
+            }
+            if !pack.reelScript.isEmpty {
+                contentDisclosure("Reel Script", icon: "film", items: [pack.reelScript])
+            }
+            if !pack.storyCards.isEmpty {
+                storyCardsDisclosure(pack.storyCards)
+            }
+            if !pack.hooks.isEmpty {
+                contentDisclosure("Hooks", icon: "link", items: pack.hooks)
+            }
+            if !pack.takeaways.isEmpty {
+                contentDisclosure("Takeaways", icon: "lightbulb", items: pack.takeaways)
             }
         }
     }
 
-    // MARK: - Summary
-
-    private func summarySection(_ session: WorkoutSession) -> some View {
-        Section("Summary") {
-            LabeledContent("Date", value: session.startedAt, format: .dateTime.month().day().year())
-            if let duration = session.duration {
-                LabeledContent("Duration", value: formatDuration(duration))
+    private func contentDisclosure(_ title: String, icon: String, items: [String]) -> some View {
+        DisclosureGroup {
+            ForEach(items, id: \.self) { item in
+                copyableText(item)
+                    .padding(.vertical, 2)
             }
-            LabeledContent("Moments", value: "\(session.moments.count)")
+        } label: {
+            Label(title, systemImage: icon)
+                .font(.subheadline.bold())
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func storyCardsDisclosure(_ cards: [StoryCard]) -> some View {
+        DisclosureGroup {
+            ForEach(cards) { card in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(card.title)
+                        .font(.subheadline.bold())
+                    Text(card.body)
+                        .font(.caption)
+                }
+                .padding(.vertical, 4)
+            }
+        } label: {
+            Label("Story Cards", systemImage: "rectangle.stack")
+                .font(.subheadline.bold())
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Insights
+
+    private func insightsCards(_ stories: [InsightStory]) -> some View {
+        ForEach(stories) { story in
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(story.title)
+                        .font(.subheadline.bold())
+                    Spacer()
+                    Text(story.type.rawValue)
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(.green.opacity(0.15), in: Capsule())
+                }
+                Text(story.body)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
-    // MARK: - Moments
+    // MARK: - Transcript
 
-    private func momentsSection(_ session: WorkoutSession) -> some View {
-        Section("Moments") {
-            ForEach(session.moments) { moment in
+    private func transcriptCard(_ moments: [Moment]) -> some View {
+        DisclosureGroup {
+            ForEach(moments) { moment in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(moment.transcript)
                         .font(.body)
@@ -164,159 +420,12 @@ struct WorkoutDetailView: View {
                 .padding(.vertical, 2)
                 .textSelection(.enabled)
             }
+        } label: {
+            Label("Transcript (\(moments.count) moments)", systemImage: "waveform")
+                .font(.subheadline.bold())
         }
-    }
-
-    // MARK: - Structured Log
-
-    private func structuredLogSection(_ log: StructuredLog) -> some View {
-        Section("Workout Log") {
-            if !log.summary.isEmpty {
-                Text(log.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            ForEach(log.exercises) { exercise in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(exercise.exerciseName)
-                        .font(.headline)
-
-                    ForEach(exercise.sets) { set in
-                        HStack(spacing: 8) {
-                            Text("Set \(set.setNumber)")
-                                .font(.caption.bold())
-                                .frame(width: 50, alignment: .leading)
-                            if let reps = set.reps {
-                                Text("\(reps) reps")
-                                    .font(.caption)
-                            }
-                            if let weight = set.weight {
-                                Text("\(weight, specifier: "%.0f") \(set.weightUnit.rawValue)")
-                                    .font(.caption)
-                            }
-                            if let notes = set.notes {
-                                Text(notes)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-
-                    if let notes = exercise.notes {
-                        Text(notes)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-
-            if !log.ambiguities.isEmpty {
-                DisclosureGroup("Ambiguities") {
-                    ForEach(log.ambiguities) { ambiguity in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(ambiguity.field)
-                                .font(.caption.bold())
-                            Text("Heard: \"\(ambiguity.rawTranscript)\"")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text("Best guess: \(ambiguity.bestGuess)")
-                                .font(.caption)
-                        }
-                        .padding(.vertical, 2)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Content Pack
-
-    private func contentPackSection(_ pack: ContentPack) -> some View {
-        Section("Content") {
-            if !pack.igCaptions.isEmpty {
-                DisclosureGroup("Instagram Captions") {
-                    ForEach(pack.igCaptions, id: \.self) { caption in
-                        copyableText(caption)
-                    }
-                }
-            }
-
-            if !pack.tweetThread.isEmpty {
-                DisclosureGroup("Tweet Thread") {
-                    ForEach(Array(pack.tweetThread.enumerated()), id: \.offset) { index, tweet in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(index + 1)/\(pack.tweetThread.count)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            copyableText(tweet)
-                        }
-                    }
-                }
-            }
-
-            if !pack.reelScript.isEmpty {
-                DisclosureGroup("Reel Script") {
-                    copyableText(pack.reelScript)
-                }
-            }
-
-            if !pack.storyCards.isEmpty {
-                DisclosureGroup("Story Cards") {
-                    ForEach(pack.storyCards) { card in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(card.title)
-                                .font(.subheadline.bold())
-                            Text(card.body)
-                                .font(.caption)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-
-            if !pack.hooks.isEmpty {
-                DisclosureGroup("Hooks") {
-                    ForEach(pack.hooks, id: \.self) { hook in
-                        copyableText(hook)
-                    }
-                }
-            }
-
-            if !pack.takeaways.isEmpty {
-                DisclosureGroup("Takeaways") {
-                    ForEach(pack.takeaways, id: \.self) { takeaway in
-                        copyableText(takeaway)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Insights
-
-    private func insightsSection(_ stories: [InsightStory]) -> some View {
-        Section("Insights") {
-            ForEach(stories) { story in
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text(story.title)
-                            .font(.subheadline.bold())
-                        Spacer()
-                        Text(story.type.rawValue)
-                            .font(.caption2)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(.green.opacity(0.15), in: Capsule())
-                    }
-                    Text(story.body)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
-            }
-        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Actions
@@ -351,5 +460,61 @@ struct WorkoutDetailView: View {
             return "\(hrs)h \(mins)m"
         }
         return "\(mins)m"
+    }
+
+    private func computeVolume(_ session: WorkoutSession) -> Double {
+        guard let exercises = session.structuredLog?.exercises else { return 0 }
+        return exercises.reduce(0.0) { total, group in
+            total + group.sets.reduce(0.0) { setTotal, set in
+                setTotal + Double(set.reps ?? 0) * (set.weight ?? 0)
+            }
+        }
+    }
+
+    private func formatVolume(_ volume: Double) -> String {
+        if volume >= 1000 {
+            return String(format: "%.1fk", volume / 1000)
+        }
+        return String(format: "%.0f", volume)
+    }
+}
+
+// MARK: - Flow Layout
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = layout(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = layout(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
+        }
+    }
+
+    private func layout(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth, x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+
+        return (CGSize(width: maxWidth, height: y + rowHeight), positions)
     }
 }

@@ -77,6 +77,30 @@ struct StructuredLog: Codable {
     var summary: String
     var highlights: [String]
     var ambiguities: [Ambiguity]
+
+    private enum CodingKeys: String, CodingKey {
+        case exercises, summary, highlights, ambiguities
+    }
+
+    init(
+        exercises: [ExerciseGroup] = [],
+        summary: String = "",
+        highlights: [String] = [],
+        ambiguities: [Ambiguity] = []
+    ) {
+        self.exercises = exercises
+        self.summary = summary
+        self.highlights = highlights
+        self.ambiguities = ambiguities
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.exercises = (try? container.decode([ExerciseGroup].self, forKey: .exercises)) ?? []
+        self.summary = (try? container.decode(String.self, forKey: .summary)) ?? ""
+        self.highlights = (try? container.decode([String].self, forKey: .highlights)) ?? []
+        self.ambiguities = (try? container.decode([Ambiguity].self, forKey: .ambiguities)) ?? []
+    }
 }
 
 struct ExerciseGroup: Codable, Identifiable {
@@ -104,9 +128,9 @@ struct ExerciseGroup: Codable, Identifiable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
-        self.exerciseName = try container.decode(String.self, forKey: .exerciseName)
-        self.sets = try container.decode([ExerciseSet].self, forKey: .sets)
-        self.notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        self.exerciseName = (try? container.decode(String.self, forKey: .exerciseName)) ?? "Unknown Exercise"
+        self.sets = (try? container.decode([ExerciseSet].self, forKey: .sets)) ?? []
+        self.notes = try? container.decodeIfPresent(String.self, forKey: .notes)
     }
 }
 
@@ -144,18 +168,56 @@ struct ExerciseSet: Codable, Identifiable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
-        self.setNumber = try container.decode(Int.self, forKey: .setNumber)
-        self.reps = try container.decodeIfPresent(Int.self, forKey: .reps)
-        self.weight = try container.decodeIfPresent(Double.self, forKey: .weight)
-        self.weightUnit = try container.decode(WeightUnit.self, forKey: .weightUnit)
-        self.duration = try container.decodeIfPresent(TimeInterval.self, forKey: .duration)
-        self.notes = try container.decodeIfPresent(String.self, forKey: .notes)
+
+        // setNumber: try Int, then String→Int, then fallback to 1
+        if let intVal = try? container.decode(Int.self, forKey: .setNumber) {
+            self.setNumber = intVal
+        } else if let strVal = try? container.decode(String.self, forKey: .setNumber), let parsed = Int(strVal) {
+            self.setNumber = parsed
+        } else {
+            self.setNumber = 1
+        }
+
+        // reps: try Int, then String→Int
+        if let intVal = try? container.decodeIfPresent(Int.self, forKey: .reps) {
+            self.reps = intVal
+        } else if let strVal = try? container.decode(String.self, forKey: .reps), let parsed = Int(strVal) {
+            self.reps = parsed
+        } else {
+            self.reps = nil
+        }
+
+        // weight: try Double, then String→Double
+        if let dblVal = try? container.decodeIfPresent(Double.self, forKey: .weight) {
+            self.weight = dblVal
+        } else if let strVal = try? container.decode(String.self, forKey: .weight), let parsed = Double(strVal) {
+            self.weight = parsed
+        } else {
+            self.weight = nil
+        }
+
+        self.weightUnit = (try? container.decode(WeightUnit.self, forKey: .weightUnit)) ?? .lbs
+        self.duration = try? container.decodeIfPresent(TimeInterval.self, forKey: .duration)
+        self.notes = try? container.decodeIfPresent(String.self, forKey: .notes)
     }
 }
 
 enum WeightUnit: String, Codable {
     case lbs
     case kg
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = (try? container.decode(String.self))?.lowercased().trimmingCharacters(in: .whitespaces) ?? ""
+        switch raw {
+        case "lbs", "lb", "pounds", "pound":
+            self = .lbs
+        case "kg", "kgs", "kilograms", "kilogram":
+            self = .kg
+        default:
+            self = .lbs
+        }
+    }
 }
 
 struct Ambiguity: Codable, Identifiable {
@@ -186,10 +248,10 @@ struct Ambiguity: Codable, Identifiable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
-        self.field = try container.decode(String.self, forKey: .field)
-        self.rawTranscript = try container.decode(String.self, forKey: .rawTranscript)
-        self.bestGuess = try container.decode(String.self, forKey: .bestGuess)
-        self.alternatives = try container.decode([String].self, forKey: .alternatives)
+        self.field = (try? container.decode(String.self, forKey: .field)) ?? ""
+        self.rawTranscript = (try? container.decode(String.self, forKey: .rawTranscript)) ?? ""
+        self.bestGuess = (try? container.decode(String.self, forKey: .bestGuess)) ?? ""
+        self.alternatives = (try? container.decode([String].self, forKey: .alternatives)) ?? []
     }
 }
 
@@ -202,6 +264,36 @@ struct ContentPack: Codable {
     var storyCards: [StoryCard]
     var hooks: [String]
     var takeaways: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case igCaptions, tweetThread, reelScript, storyCards, hooks, takeaways
+    }
+
+    init(
+        igCaptions: [String] = [],
+        tweetThread: [String] = [],
+        reelScript: String = "",
+        storyCards: [StoryCard] = [],
+        hooks: [String] = [],
+        takeaways: [String] = []
+    ) {
+        self.igCaptions = igCaptions
+        self.tweetThread = tweetThread
+        self.reelScript = reelScript
+        self.storyCards = storyCards
+        self.hooks = hooks
+        self.takeaways = takeaways
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.igCaptions = (try? container.decode([String].self, forKey: .igCaptions)) ?? []
+        self.tweetThread = (try? container.decode([String].self, forKey: .tweetThread)) ?? []
+        self.reelScript = (try? container.decode(String.self, forKey: .reelScript)) ?? ""
+        self.storyCards = (try? container.decode([StoryCard].self, forKey: .storyCards)) ?? []
+        self.hooks = (try? container.decode([String].self, forKey: .hooks)) ?? []
+        self.takeaways = (try? container.decode([String].self, forKey: .takeaways)) ?? []
+    }
 }
 
 struct StoryCard: Codable, Identifiable {
@@ -222,8 +314,8 @@ struct StoryCard: Codable, Identifiable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
-        self.title = try container.decode(String.self, forKey: .title)
-        self.body = try container.decode(String.self, forKey: .body)
+        self.title = (try? container.decode(String.self, forKey: .title)) ?? ""
+        self.body = (try? container.decode(String.self, forKey: .body)) ?? ""
     }
 }
 
@@ -257,10 +349,10 @@ struct InsightStory: Codable, Identifiable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
-        self.title = try container.decode(String.self, forKey: .title)
-        self.body = try container.decode(String.self, forKey: .body)
-        self.tags = try container.decode([String].self, forKey: .tags)
-        self.type = try container.decode(InsightType.self, forKey: .type)
+        self.title = (try? container.decode(String.self, forKey: .title)) ?? ""
+        self.body = (try? container.decode(String.self, forKey: .body)) ?? ""
+        self.tags = (try? container.decode([String].self, forKey: .tags)) ?? []
+        self.type = (try? container.decode(InsightType.self, forKey: .type)) ?? .progressNote
     }
 }
 
@@ -269,6 +361,27 @@ enum InsightType: String, Codable {
     case formReminder
     case motivational
     case recovery
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = (try? container.decode(String.self)) ?? ""
+        let normalized = raw.lowercased()
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        switch normalized {
+        case "progressnote", "progress":
+            self = .progressNote
+        case "formreminder", "form":
+            self = .formReminder
+        case "motivational", "motivation":
+            self = .motivational
+        case "recovery":
+            self = .recovery
+        default:
+            self = .progressNote
+        }
+    }
 }
 
 // MARK: - Connectivity
@@ -350,6 +463,15 @@ struct WorkoutSessionIndex: Codable, Identifiable {
     var momentCount: Int
     var hasStructuredLog: Bool
     var exerciseNames: [String]
+    var exerciseCount: Int
+    var totalSets: Int
+    var totalVolume: Double
+    var hasStories: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case id, startedAt, endedAt, momentCount, hasStructuredLog, exerciseNames
+        case exerciseCount, totalSets, totalVolume, hasStories
+    }
 
     init(from session: WorkoutSession) {
         self.id = session.id
@@ -358,6 +480,29 @@ struct WorkoutSessionIndex: Codable, Identifiable {
         self.momentCount = session.moments.count
         self.hasStructuredLog = session.structuredLog != nil
         self.exerciseNames = session.structuredLog?.exercises.map(\.exerciseName) ?? []
+        let exercises = session.structuredLog?.exercises ?? []
+        self.exerciseCount = exercises.count
+        self.totalSets = exercises.reduce(0) { $0 + $1.sets.count }
+        self.totalVolume = exercises.reduce(0.0) { total, group in
+            total + group.sets.reduce(0.0) { setTotal, set in
+                setTotal + Double(set.reps ?? 0) * (set.weight ?? 0)
+            }
+        }
+        self.hasStories = !session.stories.isEmpty
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.startedAt = try container.decode(Date.self, forKey: .startedAt)
+        self.endedAt = try? container.decodeIfPresent(Date.self, forKey: .endedAt)
+        self.momentCount = (try? container.decode(Int.self, forKey: .momentCount)) ?? 0
+        self.hasStructuredLog = (try? container.decode(Bool.self, forKey: .hasStructuredLog)) ?? false
+        self.exerciseNames = (try? container.decode([String].self, forKey: .exerciseNames)) ?? []
+        self.exerciseCount = (try? container.decode(Int.self, forKey: .exerciseCount)) ?? 0
+        self.totalSets = (try? container.decode(Int.self, forKey: .totalSets)) ?? 0
+        self.totalVolume = (try? container.decode(Double.self, forKey: .totalVolume)) ?? 0
+        self.hasStories = (try? container.decode(Bool.self, forKey: .hasStories)) ?? false
     }
 
     var duration: TimeInterval? {
@@ -372,6 +517,27 @@ struct AIWorkoutOutput: Codable {
     var structuredLog: StructuredLog
     var contentPack: ContentPack
     var stories: [InsightStory]
+
+    private enum CodingKeys: String, CodingKey {
+        case structuredLog, contentPack, stories
+    }
+
+    init(
+        structuredLog: StructuredLog = StructuredLog(),
+        contentPack: ContentPack = ContentPack(),
+        stories: [InsightStory] = []
+    ) {
+        self.structuredLog = structuredLog
+        self.contentPack = contentPack
+        self.stories = stories
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.structuredLog = (try? container.decode(StructuredLog.self, forKey: .structuredLog)) ?? StructuredLog()
+        self.contentPack = (try? container.decode(ContentPack.self, forKey: .contentPack)) ?? ContentPack()
+        self.stories = (try? container.decode([InsightStory].self, forKey: .stories)) ?? []
+    }
 }
 
 struct WorkoutProcessingRequest: Codable, Identifiable {
