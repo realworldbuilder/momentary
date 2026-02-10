@@ -52,13 +52,13 @@ Start a workout on your watch. Log moments by voice. AI turns your training into
 workout log,voice notes,strength training,gym,fitness,AI,workout tracker,apple watch,training log,lifting
 
 ## Support URL
-https://realworldbuilder.github.io/wristassist/support.html
+https://realworldbuilder.github.io/momentary/support.html
 
 ## Marketing URL
-https://realworldbuilder.github.io/wristassist/
+https://realworldbuilder.github.io/momentary/
 
 ## Privacy Policy URL
-https://realworldbuilder.github.io/wristassist/privacy.html
+https://realworldbuilder.github.io/momentary/privacy.html
 
 ## Version
 1.0

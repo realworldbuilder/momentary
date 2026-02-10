@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support - WristAssist</title>
-  <meta name="description" content="WristAssist support and frequently asked questions.">
+  <title>Support - Momentary</title>
+  <meta name="description" content="Momentary support and frequently asked questions.">
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,8 +13,8 @@
   <!-- Navbar -->
   <nav class="navbar">
     <a href="index.html" class="nav-brand">
-      <img src="assets/logo.png" alt="WristAssist logo">
-      <span>WristAssist</span>
+      <img src="assets/logo.png" alt="Momentary logo">
+      <span>Momentary</span>
     </a>
     <ul class="nav-links">
       <li><a href="support.html" class="active">Support</a></li>
@@ -25,7 +25,7 @@
   <!-- Content -->
   <main class="content-page">
     <h1>Support</h1>
-    <p class="intro">Thanks for using WristAssist. Find answers below or reach out by email.</p>
+    <p class="intro">Thanks for using Momentary. Find answers below or reach out by email.</p>
 
     <div class="content-section">
       <h2>Contact</h2>
@@ -33,12 +33,13 @@
     </div>
 
     <div class="content-section">
-      <h2>What WristAssist Does</h2>
+      <h2>What Momentary Does</h2>
       <ul>
-        <li>Records a voice note on Apple Watch.</li>
-        <li>Sends the recording to your paired iPhone.</li>
-        <li>Transcribes speech to text on your iPhone.</li>
-        <li>Saves transcriptions locally on your iPhone.</li>
+        <li>Start strength training sessions on Apple Watch or iPhone.</li>
+        <li>Record short voice moments after each set.</li>
+        <li>Transcribe speech to text on-device using WhisperKit.</li>
+        <li>AI generates structured workout logs, social content, and training insights.</li>
+        <li>Sync workouts to Apple Health automatically.</li>
       </ul>
     </div>
 
@@ -46,27 +47,38 @@
       <h2>Frequently Asked Questions</h2>
 
       <div class="faq-item">
-        <h3>Does WristAssist upload my audio or transcriptions?</h3>
-        <p>No. WristAssist processes audio on-device and does not upload your recordings or transcriptions to a server.</p>
+        <h3>How do I start a workout?</h3>
+        <p>Open Momentary on your Apple Watch and tap to start a session. You can also start a workout from the iPhone app.</p>
       </div>
 
       <div class="faq-item">
-        <h3>Why am I not seeing a transcription?</h3>
+        <h3>Do I need an internet connection?</h3>
+        <p>No — recording and transcription work entirely offline. An internet connection is only needed for AI features (structured logs, social content, insights) which use the OpenAI API.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>How do I set up AI features?</h3>
+        <p>Go to Settings in the iPhone app and enter your OpenAI API key. Once set, AI processing will run automatically when your workout ends.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Why isn't my transcription appearing?</h3>
         <ul>
           <li>Make sure your Apple Watch is paired with your iPhone.</li>
-          <li>Keep your iPhone nearby and open the iPhone app at least once.</li>
-          <li>Confirm Bluetooth/Wi-Fi are enabled.</li>
-          <li>Record a longer sample with clear speech.</li>
+          <li>Keep your iPhone nearby and open the app at least once.</li>
+          <li>Confirm Bluetooth and Wi-Fi are enabled on both devices.</li>
+          <li>Try recording a longer moment with clear speech.</li>
         </ul>
       </div>
 
       <div class="faq-item">
-        <h3>I see "No response from iPhone"</h3>
-        <ul>
-          <li>Open the iPhone app once (foreground).</li>
-          <li>Keep the iPhone within Bluetooth range.</li>
-          <li>Try again with Wi-Fi enabled on both devices.</li>
-        </ul>
+        <h3>Does Momentary upload my voice recordings?</h3>
+        <p>No. Audio is transcribed on-device and never leaves your phone. Only transcript text is sent to OpenAI if you have an API key configured — and only for AI processing.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Does it work with Apple Health?</h3>
+        <p>Yes. Momentary automatically syncs your workouts to Apple Health as strength training sessions, including duration and calorie data.</p>
       </div>
     </div>
 
