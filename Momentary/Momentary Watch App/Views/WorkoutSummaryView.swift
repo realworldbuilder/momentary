@@ -8,77 +8,76 @@ struct WorkoutSummaryView: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: 10) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(.green)
 
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.green)
+                Text("Workout Complete")
+                    .font(.headline)
 
-            Text("Workout Complete")
-                .font(.headline)
-
-            HStack(spacing: 20) {
-                VStack(spacing: 4) {
-                    Text(formattedDuration)
-                        .font(.system(.title3, design: .monospaced))
-                    Text("Duration")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(spacing: 4) {
-                    Text("\(momentCount)")
-                        .font(.title3)
-                    Text("Moments")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if averageHeartRate > 0 || totalCalories > 0 {
                 HStack(spacing: 20) {
-                    if averageHeartRate > 0 {
-                        VStack(spacing: 4) {
-                            HStack(spacing: 2) {
-                                Image(systemName: "heart.fill")
-                                    .font(.caption2)
-                                    .foregroundStyle(.red)
-                                Text("\(Int(averageHeartRate))")
-                                    .font(.title3)
-                            }
-                            Text("Avg BPM")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                    VStack(spacing: 2) {
+                        Text(formattedDuration)
+                            .font(.system(.body, design: .monospaced))
+                        Text("Duration")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
 
-                    if totalCalories > 0 {
-                        VStack(spacing: 4) {
-                            HStack(spacing: 2) {
-                                Image(systemName: "flame.fill")
+                    VStack(spacing: 2) {
+                        Text("\(momentCount)")
+                            .font(.body)
+                        Text("Moments")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if averageHeartRate > 0 || totalCalories > 0 {
+                    HStack(spacing: 20) {
+                        if averageHeartRate > 0 {
+                            VStack(spacing: 2) {
+                                HStack(spacing: 2) {
+                                    Image(systemName: "heart.fill")
+                                        .font(.caption2)
+                                        .foregroundStyle(.red)
+                                    Text("\(Int(averageHeartRate))")
+                                        .font(.body)
+                                }
+                                Text("Avg BPM")
                                     .font(.caption2)
-                                    .foregroundStyle(.orange)
-                                Text("\(Int(totalCalories))")
-                                    .font(.title3)
+                                    .foregroundStyle(.secondary)
                             }
-                            Text("Calories")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                        }
+
+                        if totalCalories > 0 {
+                            VStack(spacing: 2) {
+                                HStack(spacing: 2) {
+                                    Image(systemName: "flame.fill")
+                                        .font(.caption2)
+                                        .foregroundStyle(.orange)
+                                    Text("\(Int(totalCalories))")
+                                        .font(.body)
+                                }
+                                Text("Calories")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
-            }
 
-            Spacer()
-
-            Button("Done") {
-                onDismiss()
+                Button("Done") {
+                    onDismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .padding(.top, 4)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
+            .padding(.horizontal)
         }
-        .padding()
     }
 
     private var formattedDuration: String {
