@@ -7,6 +7,8 @@ struct WorkoutDetailView: View {
 
     @State private var session: WorkoutSession?
     @State private var copyFeedbackTrigger = false
+    @State private var isEditing = false
+    @AppStorage("weightUnit") private var weightUnit: String = WeightUnit.lbs.rawValue
 
     private var isProcessing: Bool {
         if case .processing = aiPipeline.state { return true }
@@ -48,6 +50,18 @@ struct WorkoutDetailView: View {
                         Task { await analyzeWorkout() }
                     } label: {
                         Label("Analyze", systemImage: "sparkles")
+                    }
+                }
+            }
+            if session?.structuredLog != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        if isEditing {
+                            saveEdits()
+                        }
+                        withAnimation { isEditing.toggle() }
+                    } label: {
+                        Text(isEditing ? "Done" : "Edit")
                     }
                 }
             }
@@ -111,7 +125,7 @@ struct WorkoutDetailView: View {
 
             let volume = computeVolume(session)
             if volume > 0 {
-                Text("\(formatVolume(volume)) lbs total volume")
+                Text("\(formatVolume(volume)) \(weightUnit) total volume")
                     .font(.subheadline.bold())
                     .foregroundStyle(.green)
             }
@@ -192,24 +206,22 @@ struct WorkoutDetailView: View {
 
     // MARK: - Exercise Cards
 
+    @ViewBuilder
     private func exerciseCards(_ exercises: [ExerciseGroup]) -> some View {
+        if isEditing {
+            editableExerciseCards()
+        } else {
+            readOnlyExerciseCards(exercises)
+        }
+    }
+
+    private func readOnlyExerciseCards(_ exercises: [ExerciseGroup]) -> some View {
         ForEach(exercises) { exercise in
             VStack(alignment: .leading, spacing: 10) {
                 Text(exercise.exerciseName)
                     .font(.headline)
 
-                // Sets table header
-                HStack {
-                    Text("Set")
-                        .frame(width: 36, alignment: .leading)
-                    Text("Reps")
-                        .frame(width: 50, alignment: .center)
-                    Text("Weight")
-                        .frame(minWidth: 60, alignment: .center)
-                    Spacer()
-                }
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
+                setsTableHeader
 
                 ForEach(exercise.sets) { set in
                     HStack {
@@ -247,6 +259,129 @@ struct WorkoutDetailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private var setsTableHeader: some View {
+        HStack {
+            Text("Set")
+                .frame(width: 36, alignment: .leading)
+            Text("Reps")
+                .frame(width: 50, alignment: .center)
+            Text("Weight")
+                .frame(minWidth: 60, alignment: .center)
+            Spacer()
+        }
+        .font(.caption.bold())
+        .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder
+    private func editableExerciseCards() -> some View {
+        let exerciseCount = session?.structuredLog?.exercises.count ?? 0
+        ForEach(0..<exerciseCount, id: \.self) { exerciseIndex in
+            VStack(alignment: .leading, spacing: 10) {
+                // Editable exercise name
+                HStack {
+                    TextField(
+                        "Exercise Name",
+                        text: Binding(
+                            get: { session?.structuredLog?.exercises[exerciseIndex].exerciseName ?? "" },
+                            set: { session?.structuredLog?.exercises[exerciseIndex].exerciseName = $0 }
+                        )
+                    )
+                    .font(.headline)
+                    .textFieldStyle(.roundedBorder)
+
+                    Button(role: .destructive) {
+                        withAnimation {
+                            deleteExercise(at: exerciseIndex)
+                        }
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.borderless)
+                }
+
+                setsTableHeader
+
+                // Editable sets
+                let setCount = session?.structuredLog?.exercises[exerciseIndex].sets.count ?? 0
+                ForEach(0..<setCount, id: \.self) { setIndex in
+                    HStack(spacing: 8) {
+                        Text("\(setIndex + 1)")
+                            .frame(width: 36, alignment: .leading)
+                            .font(.subheadline)
+
+                        TextField(
+                            "—",
+                            text: Binding(
+                                get: {
+                                    if let reps = session?.structuredLog?.exercises[exerciseIndex].sets[setIndex].reps {
+                                        return "\(reps)"
+                                    }
+                                    return ""
+                                },
+                                set: {
+                                    session?.structuredLog?.exercises[exerciseIndex].sets[setIndex].reps = Int($0)
+                                }
+                            )
+                        )
+                        .frame(width: 50)
+                        .multilineTextAlignment(.center)
+                        .textFieldStyle(.roundedBorder)
+                        .keyboardType(.numberPad)
+                        .font(.subheadline)
+
+                        TextField(
+                            "—",
+                            text: Binding(
+                                get: {
+                                    if let weight = session?.structuredLog?.exercises[exerciseIndex].sets[setIndex].weight {
+                                        return String(format: "%.0f", weight)
+                                    }
+                                    return ""
+                                },
+                                set: {
+                                    session?.structuredLog?.exercises[exerciseIndex].sets[setIndex].weight = Double($0)
+                                }
+                            )
+                        )
+                        .frame(width: 70)
+                        .multilineTextAlignment(.center)
+                        .textFieldStyle(.roundedBorder)
+                        .keyboardType(.decimalPad)
+                        .font(.subheadline)
+
+                        Spacer()
+
+                        Button(role: .destructive) {
+                            withAnimation {
+                                deleteSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                            }
+                        } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .foregroundStyle(.red)
+                                .font(.caption)
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+
+                // Add set button
+                Button {
+                    withAnimation {
+                        addSet(exerciseIndex: exerciseIndex)
+                    }
+                } label: {
+                    Label("Add Set", systemImage: "plus.circle")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
             }
             .padding()
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -433,6 +568,51 @@ struct WorkoutDetailView: View {
     private func analyzeWorkout() async {
         guard let session = workoutManager.workoutStore.loadSession(id: workoutID) else { return }
         await aiPipeline.processWorkout(session)
+    }
+
+    private func saveEdits() {
+        guard var updated = session else { return }
+        // Renumber all sets sequentially after edits
+        if var log = updated.structuredLog {
+            for i in log.exercises.indices {
+                for j in log.exercises[i].sets.indices {
+                    log.exercises[i].sets[j].setNumber = j + 1
+                }
+            }
+            updated.structuredLog = log
+        }
+        workoutManager.workoutStore.saveSession(updated)
+        session = updated
+    }
+
+    private func addSet(exerciseIndex: Int) {
+        guard var log = session?.structuredLog else { return }
+        let nextNumber = log.exercises[exerciseIndex].sets.count + 1
+        log.exercises[exerciseIndex].sets.append(ExerciseSet(setNumber: nextNumber))
+        session?.structuredLog = log
+    }
+
+    private func deleteExercise(at index: Int) {
+        guard var log = session?.structuredLog else { return }
+        log.exercises.remove(at: index)
+        session?.structuredLog = log
+    }
+
+    private func deleteSet(exerciseIndex: Int, setIndex: Int) {
+        guard var log = session?.structuredLog else { return }
+        log.exercises[exerciseIndex].sets.remove(at: setIndex)
+        for i in log.exercises[exerciseIndex].sets.indices {
+            log.exercises[exerciseIndex].sets[i].setNumber = i + 1
+        }
+        session?.structuredLog = log
+    }
+
+    private func renumberSets(exerciseIndex: Int) {
+        guard var log = session?.structuredLog else { return }
+        for i in log.exercises[exerciseIndex].sets.indices {
+            log.exercises[exerciseIndex].sets[i].setNumber = i + 1
+        }
+        session?.structuredLog = log
     }
 
     // MARK: - Helpers

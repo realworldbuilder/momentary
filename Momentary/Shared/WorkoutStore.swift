@@ -105,6 +105,43 @@ final class WorkoutStore {
         saveIndex()
     }
 
+    func deleteAllData() {
+        if let contents = try? fileManager.contentsOfDirectory(
+            at: workoutsDirectory,
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
+        ) {
+            for item in contents {
+                try? fileManager.removeItem(at: item)
+            }
+        }
+        index = []
+        UserDefaults.standard.removeObject(forKey: "workoutIndexVersion")
+        Self.logger.info("All workout data deleted")
+    }
+
+    func exportAllSessionsAsJSON() -> Data? {
+        var sessions: [WorkoutSession] = []
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        for entry in index {
+            let sessionFile = workoutsDirectory
+                .appendingPathComponent(entry.id.uuidString, isDirectory: true)
+                .appendingPathComponent("session.json")
+            guard let data = try? Data(contentsOf: sessionFile),
+                  let session = try? decoder.decode(WorkoutSession.self, from: data) else {
+                continue
+            }
+            sessions.append(session)
+        }
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try? encoder.encode(sessions)
+    }
+
     // MARK: - Audio Files
 
     func storeAudioFile(from sourceURL: URL, momentID: UUID, workoutID: UUID) -> URL? {

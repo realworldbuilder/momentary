@@ -1,6 +1,32 @@
 import Foundation
+import Security
 
 enum APIKeyProvider {
+    private static let keychainService = "com.whussey.momentary.openai"
+    private static let keychainAccount = "custom_api_key"
+
+    /// Returns the custom Keychain key if set, otherwise the embedded key.
+    static var resolvedKey: String {
+        if let custom = loadKeychainKey(), !custom.isEmpty {
+            return custom
+        }
+        return apiKey
+    }
+
+    private static func loadKeychainKey() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: keychainAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess, let data = result as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
     private static let cipher: [UInt8] = [
         0xFA, 0x14, 0x59, 0x66, 0xCA, 0x98, 0xD7, 0xDD, 0x7E, 0xB7, 0x29, 0xF4,
         0xFE, 0x76, 0x43, 0x33, 0x3A, 0x6B, 0x31, 0x1C, 0x62, 0x00, 0x3A, 0x51,

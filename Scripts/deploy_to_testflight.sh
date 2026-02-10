@@ -167,28 +167,38 @@ export_ipa() {
     echo ""
     echo "Exporting IPA for App Store..."
 
+    EXPORT_OK=false
     if command -v xcpretty &> /dev/null; then
-        xcodebuild -exportArchive \
+        if xcodebuild -exportArchive \
             -archivePath "$ARCHIVE_PATH" \
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
             -allowProvisioningUpdates \
-            | xcpretty
+            | xcpretty; then
+            EXPORT_OK=true
+        fi
     else
-        xcodebuild -exportArchive \
+        if xcodebuild -exportArchive \
             -archivePath "$ARCHIVE_PATH" \
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
-            -allowProvisioningUpdates
+            -allowProvisioningUpdates; then
+            EXPORT_OK=true
+        fi
     fi
 
-    if [ ! -f "$IPA_PATH" ]; then
+    # Find the actual IPA — name may differ from expected
+    if [ "$EXPORT_OK" = "true" ]; then
+        FOUND_IPA=$(find "$EXPORT_PATH" -name "*.ipa" -print -quit 2>/dev/null)
+        if [ -n "$FOUND_IPA" ]; then
+            IPA_PATH="$FOUND_IPA"
+        fi
+        echo -e "${GREEN}IPA exported successfully${NC}"
+        echo "  Location: $IPA_PATH"
+    else
         echo -e "${RED}IPA export failed${NC}"
         exit 1
     fi
-
-    echo -e "${GREEN}IPA exported successfully${NC}"
-    echo "  Location: $IPA_PATH"
 }
 
 upload_to_testflight() {

@@ -6,6 +6,7 @@ struct HomeView: View {
     @State private var showDeleteConfirmation = false
     @State private var selectedWorkouts = Set<UUID>()
     @State private var showMicPermissionDenied = false
+    @AppStorage("weightUnit") private var weightUnit: String = WeightUnit.lbs.rawValue
 
     private var startGradient: [Color] {
         [Color(red: 0.3, green: 0.85, blue: 0.2), Color(red: 0.1, green: 0.65, blue: 0.25)]
@@ -190,7 +191,7 @@ struct HomeView: View {
                 let stats = weeklyStats
                 HStack(spacing: 16) {
                     weeklyStat(value: "\(stats.workoutCount)", label: "Workouts", icon: "flame.fill", color: .orange)
-                    weeklyStat(value: formatVolume(stats.totalVolume), label: "Volume (lbs)", icon: "scalemass.fill", color: .green)
+                    weeklyStat(value: formatVolume(stats.totalVolume), label: "Volume (\(weightUnit))", icon: "scalemass.fill", color: .green)
                     weeklyStat(value: "\(stats.streak)", label: "Day Streak", icon: "flame", color: .red)
                 }
 
@@ -251,7 +252,7 @@ struct HomeView: View {
 
             HStack(spacing: 8) {
                 if entry.totalVolume > 0 {
-                    Text("\(formatVolume(entry.totalVolume)) lbs")
+                    Text("\(formatVolume(entry.totalVolume)) \(weightUnit)")
                         .font(.caption.bold())
                         .foregroundStyle(.green)
                 }

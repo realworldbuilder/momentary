@@ -13,7 +13,7 @@ enum AIPromptBuilder {
 
         RULES FOR STRUCTURED LOG:
         - Normalize exercise names (e.g., "bench" → "Barbell Bench Press", "squats" → "Barbell Back Squat")
-        - Default to lbs unless the user explicitly says kg
+        - Use the user's preferred weight unit (specified below) as the default unless the user explicitly says otherwise
         - If a rep count or weight is ambiguous, provide your best guess and list it as an ambiguity
         - Group consecutive mentions of the same exercise together
         - Number sets sequentially within each exercise
@@ -41,7 +41,8 @@ enum AIPromptBuilder {
     static func buildUserPrompt(
         moments: [Moment],
         workoutDate: Date,
-        duration: TimeInterval
+        duration: TimeInterval,
+        preferredUnit: String = UserDefaults.standard.string(forKey: "weightUnit") ?? "lbs"
     ) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
@@ -54,6 +55,7 @@ enum AIPromptBuilder {
         Date: \(dateFormatter.string(from: workoutDate))
         Duration: \(durationMinutes) minutes
         Total moments recorded: \(moments.count)
+        Preferred weight unit: \(preferredUnit)
 
         VOICE TRANSCRIPTS (in chronological order):
         """

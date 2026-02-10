@@ -12,7 +12,7 @@ final class OpenAIBackend: AIBackend, Sendable {
     private let model = "gpt-4o"
 
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
-        let apiKey = APIKeyProvider.apiKey
+        let apiKey = APIKeyProvider.resolvedKey
         guard !apiKey.isEmpty else {
             throw AIProcessingError.noAPIKey
         }
