@@ -254,6 +254,148 @@ a:hover {
   line-height: 1.5;
 }
 
+/* ===== Status Banner ===== */
+.status-banner {
+  max-width: 640px;
+  margin: -40px auto 0;
+  padding: 20px 28px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--text-mid);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.status-banner strong {
+  color: var(--text-high);
+}
+
+/* ===== How It Works (Flow Steps) ===== */
+.how-it-works {
+  padding: 80px 24px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.how-it-works h2 {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 48px;
+  color: var(--text-high);
+}
+
+.flow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.flow-number {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-high);
+}
+
+.flow-step p {
+  color: var(--text-mid);
+  font-size: 1rem;
+  line-height: 1.6;
+  padding-top: 8px;
+}
+
+/* ===== Gameplan ===== */
+.gameplan {
+  padding: 80px 24px 100px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.gameplan h2 {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 48px;
+  color: var(--text-high);
+}
+
+.gameplan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.gameplan-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.gameplan-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-high);
+  margin-bottom: 16px;
+}
+
+.gameplan-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.gameplan-card ul li {
+  color: var(--text-mid);
+  padding-left: 20px;
+  position: relative;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.gameplan-card ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.gameplan-card.done ul li::before {
+  background: #4ade80;
+}
+
+.gameplan-card.next ul li::before {
+  background: #facc15;
+}
+
+.gameplan-card.someday ul li::before {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* ===== Content Pages (Privacy, Support) ===== */
 .content-page {
   max-width: 720px;
@@ -441,7 +583,8 @@ a:hover {
     border-radius: 24px;
   }
 
-  .features-grid {
+  .features-grid,
+  .gameplan-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }

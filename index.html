@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Momentary - Workout Notebook for Your Wrist</title>
-  <meta name="description" content="Start a workout on your Apple Watch. Log moments by voice. AI turns your training into structured logs, social content, and insights.">
+  <meta name="description" content="A workout notebook built with SwiftUI, WhisperKit, and GPT-4o. Record voice moments on Apple Watch, get structured logs and insights on iPhone.">
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -30,36 +30,112 @@
       <img src="assets/logo.png" alt="Momentary app icon" class="hero-logo">
     </div>
     <h1 class="hero-title">Momentary</h1>
-    <p class="hero-tagline">Workout Notebook for Your Wrist</p>
-    <p class="hero-subtitle">Record voice moments during training. AI turns them into structured logs, social content, and insights.</p>
-    <a href="https://apps.apple.com/us/app/wristassist/id6758561450" class="app-store-badge">Download on the App Store</a>
+    <p class="hero-tagline">A workout notebook for your wrist</p>
+    <p class="hero-subtitle">SwiftUI + WhisperKit + GPT-4o. Record voice moments on Apple Watch, get structured workout logs and training insights on iPhone.</p>
+    <a href="#gameplan" class="app-store-badge">Coming to TestFlight</a>
+  </section>
+
+  <!-- Status Banner -->
+  <section class="status-banner">
+    <strong>Status:</strong> Feature-complete, heading to TestFlight. 5 phases done, Build 17. This is a personal project — you're seeing it early.
   </section>
 
   <!-- Features -->
   <section class="features">
-    <h2 class="features-heading">How It Works</h2>
+    <h2 class="features-heading">What It Does</h2>
     <div class="features-grid">
       <div class="feature-card">
         <span class="feature-icon">🎙️</span>
-        <h3>Record</h3>
-        <p>Tap to capture voice moments on your Apple Watch after each set. No phone needed.</p>
+        <h3>Voice Moments</h3>
+        <p>Record on Watch or iPhone. WhisperKit transcribes on-device — no server, no delay.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">🤖</span>
-        <h3>Process</h3>
-        <p>AI structures your voice notes into a workout log with exercises, sets, reps, and weights.</p>
+        <h3>AI Workout Logs</h3>
+        <p>GPT-4o structures your voice into exercises, sets, reps, and weights. Edit inline if it gets something wrong.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">📤</span>
-        <h3>Share</h3>
-        <p>Get social media content, training insights, and progress stories — generated from your session.</p>
+        <span class="feature-icon">❤️</span>
+        <h3>HealthKit</h3>
+        <p>Live heart rate and calories during your session. Syncs to Apple Health as strength training.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <h3>Insights</h3>
+        <p>Cross-workout analysis, weekly stats, and a story viewer — all built with Swift Charts.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📱</span>
+        <h3>Social Content</h3>
+        <p>AI generates Instagram captions, tweet threads, and reel scripts from your session.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⚙️</span>
+        <h3>Offline &amp; Settings</h3>
+        <p>Offline queue auto-retries when you're back online. Custom API key, weight units, data export.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Actually Works -->
+  <section class="how-it-works">
+    <h2>How It Actually Works</h2>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-number">1</div>
+        <p>Start a workout on your Watch. Record voice moments between sets — "just did 4 sets of bench, 185 for 8."</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">2</div>
+        <p>Audio transfers to iPhone. WhisperKit transcribes everything locally — nothing leaves your device.</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">3</div>
+        <p>End your workout. GPT-4o generates a structured log, social content, and training insights.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gameplan -->
+  <section class="gameplan" id="gameplan">
+    <h2>Gameplan &amp; Next Steps</h2>
+    <div class="gameplan-grid">
+      <div class="gameplan-card done">
+        <h3>Done</h3>
+        <ul>
+          <li>Voice recording + on-device transcription</li>
+          <li>AI processing pipeline with offline queue</li>
+          <li>HealthKit integration (live HR + calories)</li>
+          <li>Insights dashboard with Swift Charts</li>
+          <li>Inline workout editing</li>
+          <li>Settings (units, API key, export/delete)</li>
+          <li>Cross-device sync</li>
+        </ul>
+      </div>
+      <div class="gameplan-card next">
+        <h3>Up Next</h3>
+        <ul>
+          <li>Active workout tab polish (timer animations, waveform)</li>
+          <li>HealthKit testing on physical Watch</li>
+          <li>TestFlight deployment</li>
+          <li>End-to-end testing across all workflows</li>
+        </ul>
+      </div>
+      <div class="gameplan-card someday">
+        <h3>Someday Maybe</h3>
+        <ul>
+          <li>App Store submission</li>
+          <li>Cardio workout types</li>
+          <li>Workout templates and programming</li>
+          <li>Social sharing / export to other apps</li>
+        </ul>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
   <footer class="footer">
-    <p>Contact: <a href="mailto:williamhussey33@gmail.com">williamhussey33@gmail.com</a></p>
+    <p>Build ~17 · Made by Will · <a href="mailto:williamhussey33@gmail.com">williamhussey33@gmail.com</a></p>
   </footer>
 
 </body>
