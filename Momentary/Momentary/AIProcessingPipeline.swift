@@ -31,6 +31,7 @@ final class AIProcessingPipeline {
     private let networkMonitor = NWPathMonitor()
     private var isNetworkAvailable = true
     private let maxRetries = 3
+    var insightsService: InsightsService?
 
     private static var pendingQueueURL: URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -100,6 +101,7 @@ final class AIProcessingPipeline {
 
                 state = .completed
                 Self.logger.info("AI processing completed for workout \(session.id)")
+                await insightsService?.generateInsights()
                 return
 
             } catch let error as AIProcessingError {

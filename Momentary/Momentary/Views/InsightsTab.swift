@@ -2,7 +2,10 @@ import SwiftUI
 
 struct InsightsTab: View {
     @Environment(WorkoutManager.self) private var workoutManager
+    @Environment(InsightsService.self) private var insightsService
     @State private var selectedTag: String?
+    @State private var showingStoryViewer = false
+    @State private var storyViewerStartIndex = 0
 
     private struct LinkedInsight: Identifiable {
         let id: UUID
@@ -13,24 +16,104 @@ struct InsightsTab: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if allLinkedInsights.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Insights Yet", systemImage: "lightbulb")
-                    } description: {
-                        Text("Complete a workout to get AI-generated insights about your training.")
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Story Carousel
+                    if !insightsService.stories.isEmpty {
+                        storyCarouselSection
                     }
-                } else {
-                    insightsList
+
+                    // Dashboard Metrics
+                    if !insightsService.dashboardMetrics.isEmpty {
+                        dashboardSection
+                    }
+
+                    // Recent per-workout insights
+                    if allLinkedInsights.isEmpty && insightsService.stories.isEmpty {
+                        ContentUnavailableView {
+                            Label("No Insights Yet", systemImage: "lightbulb")
+                        } description: {
+                            Text("Complete a workout to get AI-generated insights about your training.")
+                        }
+                        .padding(.top, 60)
+                    } else if !allLinkedInsights.isEmpty {
+                        recentInsightsSection
+                    }
                 }
+                .padding(.bottom, 20)
             }
             .navigationTitle("Insights")
             .navigationDestination(for: UUID.self) { workoutID in
                 WorkoutDetailView(workoutID: workoutID)
             }
+            .fullScreenCover(isPresented: $showingStoryViewer) {
+                InsightStoryView(
+                    stories: insightsService.stories,
+                    startingStoryIndex: storyViewerStartIndex
+                ) {
+                    showingStoryViewer = false
+                }
+            }
         }
     }
 
+    // MARK: - Story Carousel Section
+    private var storyCarouselSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Stories")
+                .font(.headline)
+                .padding(.horizontal)
+
+            StoryCarouselView(stories: insightsService.stories) { index in
+                storyViewerStartIndex = index
+                showingStoryViewer = true
+            }
+        }
+    }
+
+    // MARK: - Dashboard Section
+    private var dashboardSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("This Week")
+                .font(.headline)
+                .padding(.horizontal)
+
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 12) {
+                ForEach(insightsService.dashboardMetrics) { metric in
+                    MetricCard(metric: metric)
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+
+    // MARK: - Recent Insights Section
+    private var recentInsightsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Recent Insights")
+                .font(.headline)
+                .padding(.horizontal)
+
+            if !allTags.isEmpty {
+                tagFilter
+            }
+
+            LazyVStack(spacing: 8) {
+                ForEach(filteredInsights) { linked in
+                    NavigationLink(value: linked.workoutID) {
+                        storyCard(linked)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+
+    // MARK: - Data
     private var allLinkedInsights: [LinkedInsight] {
         var insights: [LinkedInsight] = []
         for entry in workoutManager.workoutStore.index {
@@ -58,22 +141,7 @@ struct InsightsTab: View {
         return allLinkedInsights.filter { $0.story.tags.contains(tag) }
     }
 
-    private var insightsList: some View {
-        VStack(spacing: 0) {
-            if !allTags.isEmpty {
-                tagFilter
-            }
-
-            List {
-                ForEach(filteredInsights) { linked in
-                    NavigationLink(value: linked.workoutID) {
-                        storyCard(linked)
-                    }
-                }
-            }
-        }
-    }
-
+    // MARK: - Tag Filter
     private var tagFilter: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -87,28 +155,28 @@ struct InsightsTab: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.vertical, 8)
         }
-        .background(.ultraThinMaterial)
     }
 
+    // MARK: - Story Card
     private func storyCard(_ linked: LinkedInsight) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(linked.story.title)
                     .font(.headline)
                 Spacer()
-                Text(categoryLabel(linked.story.type))
+                Text(linked.story.type.displayName)
                     .font(.caption2)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(categoryColor(linked.story.type).opacity(0.15), in: Capsule())
-                    .foregroundStyle(categoryColor(linked.story.type))
+                    .background(linked.story.type.color.opacity(0.15), in: Capsule())
+                    .foregroundStyle(linked.story.type.color)
             }
 
             Text(linked.story.body)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .lineLimit(3)
 
             HStack(spacing: 4) {
                 Image(systemName: "dumbbell.fill")
@@ -131,27 +199,56 @@ struct InsightsTab: View {
                 }
             }
         }
-        .padding(.vertical, 4)
-    }
-
-    private func categoryLabel(_ type: InsightType) -> String {
-        switch type {
-        case .progressNote: return "Progress"
-        case .formReminder: return "Form"
-        case .motivational: return "Motivation"
-        case .recovery: return "Recovery"
-        }
-    }
-
-    private func categoryColor(_ type: InsightType) -> Color {
-        switch type {
-        case .progressNote: return .blue
-        case .formReminder: return .orange
-        case .motivational: return .green
-        case .recovery: return .purple
-        }
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
     }
 }
+
+// MARK: - Metric Card
+
+struct MetricCard: View {
+    let metric: DashboardMetric
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: metric.icon)
+                    .font(.caption)
+                    .foregroundStyle(metric.color)
+                Spacer()
+                if let trend = metric.trend, let trendValue = metric.trendValue {
+                    HStack(spacing: 2) {
+                        Image(systemName: trend.icon)
+                            .font(.caption2)
+                        Text(trendValue)
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(trend.color)
+                }
+            }
+
+            Text(metric.value)
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Text(metric.title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if let subtitle = metric.subtitle {
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Filter Chip
 
 struct FilterChip: View {
     let title: String

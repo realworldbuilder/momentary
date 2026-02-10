@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Workout Session
 
@@ -327,9 +328,12 @@ struct InsightStory: Codable, Identifiable {
     var body: String
     var tags: [String]
     var type: InsightType
+    var pages: [InsightPage]?
+    var preview: String?
+    var generatedAt: Date?
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, body, tags, type
+        case id, title, body, tags, type, pages, preview, generatedAt
     }
 
     init(
@@ -337,13 +341,19 @@ struct InsightStory: Codable, Identifiable {
         title: String,
         body: String,
         tags: [String] = [],
-        type: InsightType
+        type: InsightType,
+        pages: [InsightPage]? = nil,
+        preview: String? = nil,
+        generatedAt: Date? = nil
     ) {
         self.id = id
         self.title = title
         self.body = body
         self.tags = tags
         self.type = type
+        self.pages = pages
+        self.preview = preview
+        self.generatedAt = generatedAt
     }
 
     init(from decoder: Decoder) throws {
@@ -353,14 +363,41 @@ struct InsightStory: Codable, Identifiable {
         self.body = (try? container.decode(String.self, forKey: .body)) ?? ""
         self.tags = (try? container.decode([String].self, forKey: .tags)) ?? []
         self.type = (try? container.decode(InsightType.self, forKey: .type)) ?? .progressNote
+        self.pages = try? container.decodeIfPresent([InsightPage].self, forKey: .pages)
+        self.preview = try? container.decodeIfPresent(String.self, forKey: .preview)
+        self.generatedAt = try? container.decodeIfPresent(Date.self, forKey: .generatedAt)
+    }
+
+    var resolvedPages: [InsightPage] {
+        if let pages, !pages.isEmpty { return pages }
+        return [InsightPage(title: title, content: body)]
+    }
+
+    var storyIdentifier: String {
+        type.rawValue
+    }
+
+    var contentHash: Int {
+        var hasher = Hasher()
+        hasher.combine(type.rawValue)
+        hasher.combine(title)
+        for page in resolvedPages {
+            hasher.combine(page.content)
+            hasher.combine(page.actionable)
+        }
+        return hasher.finalize()
     }
 }
 
-enum InsightType: String, Codable {
+enum InsightType: String, Codable, CaseIterable {
     case progressNote
     case formReminder
     case motivational
     case recovery
+    case weeklyReview
+    case newPRs
+    case trendingUp
+    case nextGoals
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -378,9 +415,232 @@ enum InsightType: String, Codable {
             self = .motivational
         case "recovery":
             self = .recovery
+        case "weeklyreview", "weekly":
+            self = .weeklyReview
+        case "newprs", "prs", "pr":
+            self = .newPRs
+        case "trendingup", "trending":
+            self = .trendingUp
+        case "nextgoals", "goals":
+            self = .nextGoals
         default:
             self = .progressNote
         }
+    }
+
+    var displayName: String {
+        switch self {
+        case .progressNote: return "Progress"
+        case .formReminder: return "Form"
+        case .motivational: return "Motivation"
+        case .recovery: return "Recovery"
+        case .weeklyReview: return "Weekly Review"
+        case .newPRs: return "New PRs"
+        case .trendingUp: return "Trending Up"
+        case .nextGoals: return "Next Goals"
+        }
+    }
+
+    var systemIcon: String {
+        switch self {
+        case .progressNote: return "chart.line.uptrend.xyaxis"
+        case .formReminder: return "checkmark.circle.fill"
+        case .motivational: return "star.fill"
+        case .recovery: return "bed.double.fill"
+        case .weeklyReview: return "chart.bar.fill"
+        case .newPRs: return "trophy.fill"
+        case .trendingUp: return "arrow.up.right.circle.fill"
+        case .nextGoals: return "flag.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .progressNote: return .blue
+        case .formReminder: return .orange
+        case .motivational: return .green
+        case .recovery: return .purple
+        case .weeklyReview: return .cyan
+        case .newPRs: return .yellow
+        case .trendingUp: return .mint
+        case .nextGoals: return .indigo
+        }
+    }
+}
+
+// MARK: - Insight Page
+
+struct InsightPage: Codable, Identifiable {
+    let id: UUID
+    var title: String
+    var content: String
+    var chartData: InsightChartData?
+    var actionable: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, content, chartData, actionable
+    }
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        content: String,
+        chartData: InsightChartData? = nil,
+        actionable: String? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.content = content
+        self.chartData = chartData
+        self.actionable = actionable
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
+        self.title = (try? container.decode(String.self, forKey: .title)) ?? ""
+        self.content = (try? container.decode(String.self, forKey: .content)) ?? ""
+        self.chartData = try? container.decodeIfPresent(InsightChartData.self, forKey: .chartData)
+        self.actionable = try? container.decodeIfPresent(String.self, forKey: .actionable)
+    }
+}
+
+// MARK: - Insight Chart Data
+
+struct InsightChartData: Codable {
+    var chartType: InsightChartType
+    var dataPoints: [ChartDataPoint]
+
+    init(chartType: InsightChartType, dataPoints: [ChartDataPoint]) {
+        self.chartType = chartType
+        self.dataPoints = dataPoints
+    }
+}
+
+enum InsightChartType: String, Codable {
+    case volumeOverTime
+    case progressTrend
+    case prComparison
+}
+
+struct ChartDataPoint: Codable, Identifiable {
+    let id: UUID
+    var label: String
+    var value: Double
+    var secondaryValue: Double?
+    var date: Date?
+    var isPR: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, label, value, secondaryValue, date, isPR
+    }
+
+    init(
+        id: UUID = UUID(),
+        label: String,
+        value: Double,
+        secondaryValue: Double? = nil,
+        date: Date? = nil,
+        isPR: Bool? = nil
+    ) {
+        self.id = id
+        self.label = label
+        self.value = value
+        self.secondaryValue = secondaryValue
+        self.date = date
+        self.isPR = isPR
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
+        self.label = (try? container.decode(String.self, forKey: .label)) ?? ""
+        self.value = (try? container.decode(Double.self, forKey: .value)) ?? 0
+        self.secondaryValue = try? container.decodeIfPresent(Double.self, forKey: .secondaryValue)
+        self.date = try? container.decodeIfPresent(Date.self, forKey: .date)
+        self.isPR = try? container.decodeIfPresent(Bool.self, forKey: .isPR)
+    }
+}
+
+// MARK: - Dashboard Metric
+
+struct DashboardMetric: Identifiable {
+    let id: UUID
+    var title: String
+    var value: String
+    var subtitle: String?
+    var icon: String
+    var color: Color
+    var trend: TrendDirection?
+    var trendValue: String?
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        value: String,
+        subtitle: String? = nil,
+        icon: String,
+        color: Color,
+        trend: TrendDirection? = nil,
+        trendValue: String? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.value = value
+        self.subtitle = subtitle
+        self.icon = icon
+        self.color = color
+        self.trend = trend
+        self.trendValue = trendValue
+    }
+}
+
+enum TrendDirection {
+    case up, down, stable
+
+    var icon: String {
+        switch self {
+        case .up: return "arrow.up.right"
+        case .down: return "arrow.down.right"
+        case .stable: return "arrow.right"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .up: return .green
+        case .down: return .red
+        case .stable: return .secondary
+        }
+    }
+}
+
+// MARK: - Insight Pack
+
+struct InsightPack: Codable {
+    var takeaways: [String]
+    var formCues: [String]
+    var prNotes: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case takeaways, formCues, prNotes
+    }
+
+    init(
+        takeaways: [String] = [],
+        formCues: [String] = [],
+        prNotes: [String] = []
+    ) {
+        self.takeaways = takeaways
+        self.formCues = formCues
+        self.prNotes = prNotes
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.takeaways = (try? container.decode([String].self, forKey: .takeaways)) ?? []
+        self.formCues = (try? container.decode([String].self, forKey: .formCues)) ?? []
+        self.prNotes = (try? container.decode([String].self, forKey: .prNotes)) ?? []
     }
 }
 
@@ -522,19 +782,22 @@ struct AIWorkoutOutput: Codable {
     var structuredLog: StructuredLog
     var contentPack: ContentPack
     var stories: [InsightStory]
+    var insightPack: InsightPack?
 
     private enum CodingKeys: String, CodingKey {
-        case structuredLog, contentPack, stories
+        case structuredLog, contentPack, stories, insightPack
     }
 
     init(
         structuredLog: StructuredLog = StructuredLog(),
         contentPack: ContentPack = ContentPack(),
-        stories: [InsightStory] = []
+        stories: [InsightStory] = [],
+        insightPack: InsightPack? = nil
     ) {
         self.structuredLog = structuredLog
         self.contentPack = contentPack
         self.stories = stories
+        self.insightPack = insightPack
     }
 
     init(from decoder: Decoder) throws {
@@ -542,6 +805,7 @@ struct AIWorkoutOutput: Codable {
         self.structuredLog = (try? container.decode(StructuredLog.self, forKey: .structuredLog)) ?? StructuredLog()
         self.contentPack = (try? container.decode(ContentPack.self, forKey: .contentPack)) ?? ContentPack()
         self.stories = (try? container.decode([InsightStory].self, forKey: .stories)) ?? []
+        self.insightPack = try? container.decodeIfPresent(InsightPack.self, forKey: .insightPack)
     }
 }
 

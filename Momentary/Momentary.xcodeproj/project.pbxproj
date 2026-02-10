@@ -26,6 +26,11 @@
 		A1000020 /* InsightsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000022 /* InsightsTab.swift */; };
 		A1000021 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000023 /* SettingsView.swift */; };
 		A1000022 /* APIKeyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000024 /* APIKeyProvider.swift */; };
+		A1000025 /* StoryReadTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000025 /* StoryReadTracker.swift */; };
+		A1000026 /* InsightsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000026 /* InsightsService.swift */; };
+		A1000027 /* InsightStoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000027 /* InsightStoryView.swift */; };
+		A1000028 /* StoryCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000028 /* StoryCarouselView.swift */; };
+		A1000029 /* InsightChartViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000029 /* InsightChartViews.swift */; };
 		A2000001 /* MomentaryWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* MomentaryWatchApp.swift */; };
 		A2000003 /* AudioRecorderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* AudioRecorderService.swift */; };
 		A2000004 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* WatchConnectivityManager.swift */; };
@@ -97,6 +102,11 @@
 		B2000010 /* ActiveWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutView.swift; sourceTree = "<group>"; };
 		B2000011 /* WorkoutSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSummaryView.swift; sourceTree = "<group>"; };
 		B1000024 /* APIKeyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyProvider.swift; sourceTree = "<group>"; };
+		B1000025 /* StoryReadTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryReadTracker.swift; sourceTree = "<group>"; };
+		B1000026 /* InsightsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsService.swift; sourceTree = "<group>"; };
+		B1000027 /* InsightStoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightStoryView.swift; sourceTree = "<group>"; };
+		B1000028 /* StoryCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryCarouselView.swift; sourceTree = "<group>"; };
+		B1000029 /* InsightChartViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightChartViews.swift; sourceTree = "<group>"; };
 		B1000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2000005 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C1000001 /* Momentary.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Momentary.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -154,6 +164,8 @@
 				B1000016 /* AIPromptBuilder.swift */,
 				B1000017 /* AIProcessingPipeline.swift */,
 				B1000024 /* APIKeyProvider.swift */,
+				B1000025 /* StoryReadTracker.swift */,
+				B1000026 /* InsightsService.swift */,
 				F2000002 /* Views */,
 				B1000007 /* Assets.xcassets */,
 			);
@@ -169,6 +181,9 @@
 				B1000021 /* WorkoutDetailView.swift */,
 				B1000022 /* InsightsTab.swift */,
 				B1000023 /* SettingsView.swift */,
+				B1000027 /* InsightStoryView.swift */,
+				B1000028 /* StoryCarouselView.swift */,
+				B1000029 /* InsightChartViews.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -326,6 +341,11 @@
 				A1000020 /* InsightsTab.swift in Sources */,
 				A1000021 /* SettingsView.swift in Sources */,
 				A1000022 /* APIKeyProvider.swift in Sources */,
+				A1000025 /* StoryReadTracker.swift in Sources */,
+				A1000026 /* InsightsService.swift in Sources */,
+				A1000027 /* InsightStoryView.swift in Sources */,
+				A1000028 /* StoryCarouselView.swift in Sources */,
+				A1000029 /* InsightChartViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -487,7 +507,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Momentary/Momentary.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -524,7 +544,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Momentary/Momentary.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -562,7 +582,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Momentary Watch App/Momentary Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -596,7 +616,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Momentary Watch App/Momentary Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;

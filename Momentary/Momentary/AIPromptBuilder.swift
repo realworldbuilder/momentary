@@ -8,8 +8,8 @@ enum AIPromptBuilder {
 
         Your job is to analyze voice transcripts from a strength training session and produce:
         1. A structured workout log (exercises, sets, reps, weights)
-        2. Social media content (Instagram captions, tweet threads, reel scripts)
-        3. Training insights and stories
+        2. Training insights and stories
+        3. An insight pack with takeaways, form cues, and PR notes
 
         RULES FOR STRUCTURED LOG:
         - Normalize exercise names (e.g., "bench" → "Barbell Bench Press", "squats" → "Barbell Back Squat")
@@ -18,21 +18,18 @@ enum AIPromptBuilder {
         - Group consecutive mentions of the same exercise together
         - Number sets sequentially within each exercise
 
-        RULES FOR CONTENT:
-        - Match the user's tone — if they're casual, be casual; if they're technical, be technical
-        - Avoid generic fitness cliches ("no pain no gain", "beast mode", etc.)
-        - Instagram captions should be < 2200 characters
-        - Each tweet should be < 280 characters
-        - Reel scripts should be 30-60 seconds when read aloud
-        - Story cards should be brief, punchy insights
-        - Hooks should be attention-grabbing first lines
-        - Takeaways should be actionable lessons from the session
-
         RULES FOR INSIGHTS:
         - progressNote: Observations about progress, PRs, volume changes
         - formReminder: Form cues or technique notes the user mentioned
         - motivational: Encouraging notes based on effort or consistency
         - recovery: Notes about fatigue, soreness, or recovery needs
+        - Each story should have multi-page content when there's enough detail
+        - Pages should include actionable items where relevant
+
+        RULES FOR INSIGHT PACK:
+        - takeaways: Key lessons or observations from this session (2-3 items)
+        - formCues: Specific form or technique reminders mentioned (1-2 items, or empty)
+        - prNotes: Any personal records or notable weight milestones (or empty)
 
         Respond with valid JSON matching the schema exactly.
         """
@@ -99,25 +96,67 @@ enum AIPromptBuilder {
               }
             ]
           },
-          "contentPack": {
-            "igCaptions": ["Instagram caption 1"],
-            "tweetThread": ["Tweet 1", "Tweet 2"],
-            "reelScript": "Reel script text",
-            "storyCards": [{"title": "Title", "body": "Body"}],
-            "hooks": ["Hook line 1"],
-            "takeaways": ["Takeaway 1"]
+          "insightPack": {
+            "takeaways": ["Key takeaway 1", "Key takeaway 2"],
+            "formCues": ["Form cue if mentioned"],
+            "prNotes": ["PR note if applicable"]
           },
           "stories": [
             {
               "title": "Story Title",
               "body": "Story body text",
               "tags": ["strength", "chest"],
-              "type": "progressNote"
+              "type": "progressNote",
+              "pages": [
+                {
+                  "title": "Page Title",
+                  "content": "Page content text",
+                  "actionable": "Optional action item"
+                }
+              ],
+              "preview": "Short preview text"
             }
           ]
         }
+
+        Note: The "contentPack" field is no longer needed. Focus on insightPack and stories instead.
         """
 
         return prompt
+    }
+
+    static func buildInsightPrompt(
+        storyType: InsightType,
+        workoutSummary: String,
+        timePeriod: String
+    ) -> String {
+        let typeDescription: String
+        switch storyType {
+        case .weeklyReview:
+            typeDescription = "a weekly training review highlighting consistency, volume trends, and notable sessions"
+        case .newPRs:
+            typeDescription = "celebrating new personal records with context about how far the lifter has come"
+        case .trendingUp:
+            typeDescription = "noting positive trends in exercise performance and progressive overload"
+        case .nextGoals:
+            typeDescription = "suggesting specific, achievable next targets based on current performance"
+        case .progressNote:
+            typeDescription = "an observation about training progress"
+        case .formReminder:
+            typeDescription = "a form or technique reminder"
+        case .motivational:
+            typeDescription = "an encouraging note about effort and consistency"
+        case .recovery:
+            typeDescription = "a note about recovery needs"
+        }
+
+        return """
+        Write \(typeDescription) for a strength training athlete.
+
+        TRAINING DATA (\(timePeriod)):
+        \(workoutSummary)
+
+        Write 2-3 concise, specific sentences. Be direct and personalized based on the data. No generic fitness cliches.
+        """
     }
 }
