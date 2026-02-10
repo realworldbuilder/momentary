@@ -44,6 +44,12 @@ struct ActiveWorkoutView: View {
                 withAnimation(.easeOut(duration: 0.4)) {
                     showSnippet = true
                 }
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    withAnimation(.easeIn(duration: 0.3)) {
+                        showSnippet = false
+                    }
+                }
             }
         }
         .onChange(of: workoutManager.isRecordingMoment) {
@@ -64,24 +70,39 @@ struct ActiveWorkoutView: View {
     // MARK: - Active View
 
     private var activeView: some View {
-        VStack(spacing: 8) {
+        TabView {
+            workoutPage
+                .containerBackground(.black.gradient, for: .tabView)
+
+            NowPlayingPage()
+                .containerBackground(.black.gradient, for: .tabView)
+        }
+        .tabViewStyle(.verticalPage)
+    }
+
+    // MARK: - Workout Page
+
+    private var workoutPage: some View {
+        VStack(spacing: 4) {
             workoutTimer
 
             healthMetricsRow
 
-            Spacer()
+            Spacer(minLength: 0)
 
             momentRecordButton
 
             statusArea
 
-            Spacer()
-
-            snippetCard
+            Spacer(minLength: 0)
 
             endWorkoutButton
         }
         .padding(.horizontal, 8)
+        .overlay(alignment: .bottom) {
+            snippetOverlay
+                .padding(.bottom, 44)
+        }
     }
 
     // MARK: - Always On Display
@@ -177,10 +198,10 @@ struct ActiveWorkoutView: View {
                                 colors: [Color(red: 0.1, green: 0.9, blue: 0.1).opacity(0.4), .clear],
                                 center: .center,
                                 startRadius: 20,
-                                endRadius: 55
+                                endRadius: 50
                             )
                         )
-                        .frame(width: 90, height: 90)
+                        .frame(width: 82, height: 82)
                         .opacity(isPulsing ? 0.8 : 0.3)
                         .accessibilityHidden(true)
                 }
@@ -194,7 +215,7 @@ struct ActiveWorkoutView: View {
                             ),
                             lineWidth: 3
                         )
-                        .frame(width: 82, height: 82)
+                        .frame(width: 76, height: 76)
                         .rotationEffect(.degrees(ringRotation))
                         .accessibilityHidden(true)
                 }
@@ -207,10 +228,10 @@ struct ActiveWorkoutView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 72, height: 72)
+                    .frame(width: 66, height: 66)
 
                 Image(systemName: workoutManager.isRecordingMoment ? "stop.fill" : "mic.fill")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(.white)
             }
             .scaleEffect(isPulsing ? 1.05 : 1.0)
@@ -256,11 +277,11 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    // MARK: - Snippet Card
+    // MARK: - Snippet Overlay
 
     @ViewBuilder
-    private var snippetCard: some View {
-        if let snippet = workoutManager.latestTranscriptSnippet {
+    private var snippetOverlay: some View {
+        if let snippet = workoutManager.latestTranscriptSnippet, showSnippet {
             Text(truncatedSnippet(snippet))
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.8))
@@ -271,10 +292,9 @@ struct ActiveWorkoutView: View {
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(.white.opacity(0.06))
+                        .fill(.black.opacity(0.85))
                 )
-                .opacity(showSnippet ? 1 : 0)
-                .offset(y: showSnippet ? 0 : 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
 
         if let error = workoutManager.lastError {
