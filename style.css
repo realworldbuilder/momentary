@@ -1,16 +1,16 @@
 /* ===== CSS Variables ===== */
 :root {
-  --bg-primary: #1a1b2e;
-  --bg-secondary: #2B2D42;
-  --green-bright: #4CD933;
-  --green-primary: #19A640;
-  --green-vivid: #19E619;
-  --green-deep: #008026;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+  --accent-bright: #ffffff;
+  --accent-primary: #d0d0d0;
+  --accent-vivid: #ffffff;
+  --accent-deep: #a0a0a0;
   --text-high: rgba(255, 255, 255, 0.95);
   --text-mid: rgba(255, 255, 255, 0.6);
   --text-low: rgba(255, 255, 255, 0.4);
   --card-bg: rgba(255, 255, 255, 0.04);
-  --card-border: rgba(255, 255, 255, 0.06);
+  --card-border: rgba(255, 255, 255, 0.08);
   --nav-height: 64px;
 }
 
@@ -36,13 +36,13 @@ body {
 }
 
 a {
-  color: var(--green-bright);
+  color: var(--accent-bright);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 a:hover {
-  color: var(--green-vivid);
+  color: var(--accent-vivid);
 }
 
 /* ===== Frosted Glass Navbar ===== */
@@ -56,7 +56,7 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: rgba(26, 27, 46, 0.7);
+  background: rgba(26, 26, 26, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--card-border);
@@ -97,7 +97,7 @@ a:hover {
 
 .nav-links a:hover,
 .nav-links a.active {
-  color: var(--green-bright);
+  color: var(--accent-bright);
 }
 
 /* ===== Hero Section ===== */
@@ -121,7 +121,7 @@ a:hover {
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(25, 166, 64, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
   animation: heroGlow 4s ease-in-out infinite alternate;
   pointer-events: none;
 }
@@ -140,7 +140,7 @@ a:hover {
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(76, 217, 51, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
   animation: logoGlow 3s ease-in-out infinite alternate;
   pointer-events: none;
 }
@@ -157,7 +157,7 @@ a:hover {
   font-size: 3.5rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--green-bright), var(--green-vivid), var(--green-primary), var(--green-bright));
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent-vivid), var(--accent-primary), var(--accent-bright));
   background-size: 300% 300%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -183,7 +183,7 @@ a:hover {
 .app-store-badge {
   display: inline-block;
   padding: 14px 32px;
-  background: linear-gradient(135deg, var(--green-primary), var(--green-deep));
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-deep));
   color: white;
   font-weight: 600;
   font-size: 1rem;
@@ -193,7 +193,7 @@ a:hover {
 
 .app-store-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(25, 166, 64, 0.3);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
   color: white;
 }
 
@@ -231,8 +231,8 @@ a:hover {
 
 .feature-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(76, 217, 51, 0.2);
-  box-shadow: 0 12px 40px rgba(25, 166, 64, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.05);
 }
 
 .feature-icon {
@@ -245,7 +245,7 @@ a:hover {
   font-size: 1.15rem;
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--green-bright);
+  color: var(--accent-bright);
 }
 
 .feature-card p {
@@ -265,7 +265,7 @@ a:hover {
   font-size: 2.2rem;
   font-weight: 700;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, var(--green-bright), var(--green-vivid));
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent-vivid));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -291,7 +291,7 @@ a:hover {
 .content-section h2 {
   font-size: 1.35rem;
   font-weight: 600;
-  color: var(--green-bright);
+  color: var(--accent-bright);
   margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--card-border);
@@ -333,7 +333,7 @@ a:hover {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--green-primary);
+  background: var(--accent-primary);
 }
 
 /* Summary highlight box */
@@ -346,7 +346,7 @@ a:hover {
 }
 
 .summary-box ul li::before {
-  background: var(--green-bright);
+  background: var(--accent-bright);
 }
 
 /* FAQ styling */
@@ -359,7 +359,7 @@ a:hover {
 }
 
 .faq-item h3 {
-  color: var(--green-bright);
+  color: var(--accent-bright);
   margin-top: 0;
   margin-bottom: 10px;
   font-size: 1rem;
@@ -384,7 +384,7 @@ a:hover {
 }
 
 .footer a:hover {
-  color: var(--green-bright);
+  color: var(--accent-bright);
 }
 
 /* ===== Animations ===== */
