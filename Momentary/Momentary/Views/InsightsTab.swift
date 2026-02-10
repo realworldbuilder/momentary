@@ -60,16 +60,9 @@ struct InsightsTab: View {
 
     // MARK: - Story Carousel Section
     private var storyCarouselSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Stories", systemImage: "sparkles")
-                .font(.subheadline.bold())
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
-
-            StoryCarouselView(stories: insightsService.stories) { index in
-                storyViewerStartIndex = index
-                showingStoryViewer = true
-            }
+        StoryCarouselView(stories: insightsService.stories) { index in
+            storyViewerStartIndex = index
+            showingStoryViewer = true
         }
     }
 

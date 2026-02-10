@@ -31,13 +31,13 @@ struct StoryBadgeView: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            VStack(spacing: 10) {
                 ZStack {
                     // Gradient ring
                     Circle()
                         .stroke(
                             LinearGradient(
-                                colors: [story.type.color, story.type.color.opacity(0.6)],
+                                colors: [.green, .green.opacity(0.6)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -47,17 +47,17 @@ struct StoryBadgeView: View {
 
                     // Icon background
                     Circle()
-                        .fill(story.type.color.opacity(0.15))
+                        .fill(Color.green.opacity(0.15))
                         .frame(width: 56, height: 56)
 
                     // Icon
                     Image(systemName: story.type.systemIcon)
                         .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(story.type.color)
+                        .foregroundStyle(.green)
                 }
                 .overlay(
                     Circle()
-                        .stroke(story.type.color.opacity(glowPhase ? 0.6 : 0), lineWidth: 2)
+                        .stroke(Color.green.opacity(glowPhase ? 0.6 : 0), lineWidth: 2)
                         .frame(width: 68, height: 68)
                         .scaleEffect(glowPhase ? 1.1 : 1.0)
                 )
