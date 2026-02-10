@@ -1,66 +1,126 @@
-# Next Session: Fix Watch ↔ Phone Workout Sync
+# Next Session: Polish and Testing
 
-## The Problem
-Active workouts don't stay in sync between the Apple Watch and iPhone. Starting a workout on one device doesn't reliably reflect on the other, and moments recorded on the watch may not land in the phone's workout session.
+## What Was Accomplished (Build 13)
 
-## Root Causes (in priority order)
+### Settings View (Task 1)
+- Weight unit picker (segmented lbs/kg) via `@AppStorage("weightUnit")`
+- Export all workouts as JSON via share sheet
+- Delete all data with confirmation dialog
+- Custom OpenAI API key management (SecureField → Keychain)
+- About section with real version/build from bundle
+- `APIKeyProvider.resolvedKey` checks Keychain first, falls back to embedded key
+- AI prompt builder accepts `preferredUnit` from UserDefaults
+- HomeView and WorkoutDetailView volume labels use user's preferred unit
 
-### 1. Workout ID Mismatch
-When the watch starts a workout, `WatchWorkoutManager.startWorkout()` generates a new UUID and sends a `.start` command to the phone. The phone's callback creates a `WorkoutSession` using the watch's `message.workoutID` — that part is fine. But when the **phone** starts first, the watch receives the `.start` command yet doesn't fully enter active workout state. The watch's `WatchWorkoutManager` doesn't adopt the phone's workout ID or show an active workout UI.
+### Workout Editing (Task 2)
+- Edit/Done toolbar button on WorkoutDetailView
+- Editable exercise names via TextField
+- Editable reps/weight as TextFields with number/decimal pad keyboards
+- Delete exercise button per card
+- Delete set with auto-renumber
+- Add set "+" button per exercise card
+- Done saves back via `WorkoutStore.saveSession()`
 
-### 2. Fire-and-Forget Messaging
-All messages use `sendMessage()` with `replyHandler: nil` and fall back to `transferUserInfo()`. No acknowledgment, no retry, no way to know if the other device received the command.
+### Deploy Script Fix (Task 4)
+- `export_ipa()` checks xcodebuild exit code (`EXPORT_OK` flag) instead of just checking for `$IPA_PATH` on disk
+- Uses `find` to locate actual `.ipa` filename in export directory
 
-### 3. No State Reconciliation
-If connectivity drops mid-workout and comes back, neither device checks whether they agree on workout state. The watch could show "active" while the phone thinks it's idle, or vice versa.
+### HealthKit Integration (Task 5)
+- `HealthKitService` now inherits from `NSObject` (required for delegate conformance)
+- `HKLiveWorkoutBuilderDelegate` conformance in `#if os(watchOS)` extension
+- `builder.delegate = self` set in `startWorkout()` — the critical missing line
+- `workoutBuilder(_:didCollectDataOf:)` parses heart rate and calories from builder statistics
+- `averageHeartRate` and `totalActiveCalories` stored properties for summary screen
+- Final stats captured from builder in `endWorkout()` before cleanup
+- Metrics reset in `startWorkout()`
+- Delegate methods are `nonisolated` → bridge to `@MainActor` via `Task { @MainActor in }`
+- `WatchWorkoutManager.healthKitService` changed from optional to non-optional `let`
+- `healthWorkoutUUID` added to `WorkoutMessage` (struct, init, toDictionary, from)
+- Stop message includes `healthWorkoutUUID` from HealthKit session
+- Phone-side `handleRemoteStop` stores `healthWorkoutUUID` on session
+- HealthKit authorization requested on watch app launch via `.task`
+- Live heart rate and calories shown in `ActiveWorkoutView` between timer and record button
+- Heart rate shown in always-on display (dimmed)
+- `WorkoutSummaryView` shows avg BPM and total calories (conditionally, only if > 0)
 
-### 4. Stop Race Condition
-`WorkoutManager.endWorkout()` sets `activeSession = nil` immediately, then sends the stop message. If a watch moment arrives between those two lines (or is already in flight), the phone drops it because `activeSession` is nil in `addMoment()`.
+---
 
-## Architecture Overview
+## What To Build Next
+
+### Task 1: Active Workout Tab Polish
+- **Live timer** — add `TimelineView(.periodic(from: .now, by: 1))` wrapper so elapsed time updates every second
+- **Moment animations** — animate new moments appearing in the feed
+- **Recording waveform** — show audio level visualization during recording
+
+**Key file:** `Momentary/Momentary/Views/ActiveWorkoutTab.swift`
+
+### Task 2: HealthKit Testing & Refinement
+- Test on physical Apple Watch — verify HealthKit permission prompt, live heart rate/calories, workout appears in Apple Health
+- Handle edge cases: HealthKit not available, authorization denied, workout session errors
+- Consider showing HealthKit data in WorkoutDetailView on phone side
+
+### Task 3: Build 14 Deploy
+- Bump build number to 14
+- Run deploy script to TestFlight
+- Verify all features work on device
+
+---
+
+## Architecture Reference
 
 ```
-┌─────────────────────────┐         ┌──────────────────────────┐
-│     iPhone (iOS)        │         │    Apple Watch (watchOS)  │
-│                         │         │                           │
-│  WorkoutManager         │◄──WC──►│  WatchWorkoutManager      │
-│    ├─ activeSession     │         │    ├─ isWorkoutActive     │
-│    ├─ workoutStore      │         │    ├─ currentWorkoutID    │
-│    ├─ transcriptionSvc  │         │    ├─ recorder            │
-│    └─ connectivityMgr   │         │    └─ connectivity        │
-│                         │         │                           │
-│  PhoneConnectivityMgr   │         │  WatchConnectivityMgr     │
-│    WCSessionDelegate    │         │    WCSessionDelegate      │
-└─────────────────────────┘         └──────────────────────────┘
+┌─────────────────────────────┐         ┌──────────────────────────────┐
+│     iPhone (iOS)             │         │    Apple Watch (watchOS)      │
+│                              │         │                               │
+│  MomentaryApp                │         │  MomentaryWatchApp            │
+│    └─ WorkoutManager ────────│◄──WC──►│    └─ WatchWorkoutManager     │
+│         ├─ activeSession     │         │         ├─ isWorkoutActive    │
+│         ├─ endingSessionID   │         │         ├─ currentWorkoutID   │
+│         ├─ workoutStore ─────│──┐      │         ├─ didReceiveRemoteStop│
+│         ├─ transcriptionSvc  │  │      │         ├─ recorder           │
+│         ├─ connectivityMgr ──│──┤      │         ├─ connectivity ──────│──┐
+│         └─ aiPipeline ───────│──┤      │         ├─ extendedSession    │  │
+│                              │  │      │         └─ healthKitService ──│──┤
+│  AIProcessingPipeline ───────│──┘      │              (HKLiveWorkout   │  │
+│    ├─ OpenAIBackend (gpt-4o) │         │               BuilderDelegate)│  │
+│    ├─ AIPromptBuilder        │         │                               │  │
+│    └─ pendingQueue           │         │  WatchConnectivityMgr         │  │
+│                              │         │    ├─ onWorkoutCommand        │  │
+│  WorkoutStore ───────────────│──┘      │    ├─ onReceivedWorkoutContext│  │
+│    ├─ Documents/workouts/    │         │    └─ updateWorkoutContext()  │  │
+│    │   └─ <UUID>/session.json│         │                               │  │
+│    └─ index.json             │         └──────────────────────────────┘
+└─────────────────────────────┘
 ```
 
-**Key files:**
-- `Momentary/Momentary/WorkoutManager.swift` — phone-side workout state & moment handling
-- `Momentary/Momentary/PhoneConnectivityManager.swift` — phone WCSession delegate
-- `Momentary/Momentary Watch App/WatchWorkoutManager.swift` — watch-side workout state
-- `Momentary/Momentary Watch App/WatchConnectivityManager.swift` — watch WCSession delegate
-- `Shared/ConnectivityConstants.swift` — message keys
-- `Shared/Models.swift` — `WorkoutMessage`, `WorkoutCommand`, `WorkoutSession`, `Moment`
+### Key Files
 
-**Message protocol:** `WorkoutMessage` with commands `.start`, `.stop`, `.momentRecorded`, `.momentTranscribed`. Serialized to dictionary via `toDictionary()` / `from(dictionary:)`.
+| File | Purpose |
+|------|---------|
+| `Momentary/Momentary/MomentaryApp.swift` | App entry, pipeline wiring |
+| `Momentary/Momentary/WorkoutManager.swift` | Phone workout state, moment processing, AI trigger, healthWorkoutUUID relay |
+| `Momentary/Momentary/PhoneConnectivityManager.swift` | Phone WCSession delegate with context sync |
+| `Momentary/Momentary/AIProcessingPipeline.swift` | Orchestrates OpenAI calls, retry, offline queue, lenient parsing |
+| `Momentary/Momentary/AIProcessingService.swift` | OpenAI GPT-4o HTTP client |
+| `Momentary/Momentary/AIPromptBuilder.swift` | Builds system/user prompts with preferred weight unit |
+| `Momentary/Momentary/APIKeyProvider.swift` | Keychain custom key → embedded fallback |
+| `Momentary/Momentary/Views/HomeView.swift` | Workout history + weekly summary dashboard |
+| `Momentary/Momentary/Views/WorkoutDetailView.swift` | Card-based detail with inline editing |
+| `Momentary/Momentary/Views/SettingsView.swift` | Weight unit, export, delete, API key, about |
+| `Momentary/Momentary/Views/ActiveWorkoutTab.swift` | Live workout recording UI (phone) |
+| `Momentary/Momentary/Views/InsightsTab.swift` | Aggregated insights with workout back-links |
+| `Momentary/Momentary Watch App/WatchWorkoutManager.swift` | Watch workout lifecycle, HealthKit integration |
+| `Momentary/Momentary Watch App/Views/ActiveWorkoutView.swift` | Watch workout UI with live health metrics |
+| `Momentary/Momentary Watch App/Views/WorkoutSummaryView.swift` | Post-workout summary with avg BPM + calories |
+| `Momentary/Momentary Watch App/MomentaryWatchApp.swift` | Watch app entry, early HealthKit auth |
+| `Momentary/Shared/Models.swift` | All Codable models + WorkoutMessage with healthWorkoutUUID |
+| `Momentary/Shared/HealthKitService.swift` | HKLiveWorkoutBuilder delegate, live metrics |
+| `Momentary/Shared/WorkoutStore.swift` | Disk persistence + index migration + export/delete |
 
-**Audio flow:** Watch records → `WCSession.transferFile()` with metadata (momentID, workoutID) → Phone receives in `didReceive file:` → transcribes via OpenAI Whisper API → sends `.momentTranscribed` back to watch.
-
-## Suggested Fix Approach
-
-1. **Use a single workout ID**: Whichever device starts first generates the UUID. The other device adopts it when it receives the `.start` command. Both sides should fully enter active workout state upon receiving a remote `.start`.
-
-2. **Add applicationContext sync**: Use `WCSession.updateApplicationContext()` to broadcast current workout state (`{workoutID: UUID?, isActive: bool}`). This survives app restarts and connectivity drops. Check it in `activationDidCompleteWith` and `didReceiveApplicationContext`.
-
-3. **Don't nil out activeSession on stop until moments drain**: Either queue the stop or keep the session around briefly to catch in-flight moments.
-
-4. **Add replyHandler to critical messages**: At minimum for `.start` and `.stop` so the sender knows the other side received it.
-
-## Project Details
-- iOS: `com.whussey.momentary` / watchOS: `com.whussey.momentary.watchkitapp`
-- Xcode project: `Momentary/Momentary.xcodeproj`
-- Current build number: 7
-- Transcription: OpenAI Whisper API (no local model)
-- AI processing: OpenAI GPT-4o
-- API key: built-in via `APIKeyProvider.swift` (XOR-obfuscated)
-- To rebuild for TestFlight: `xcodebuild archive -scheme Momentary -destination 'generic/platform=iOS' -archivePath build/Momentary.xcarchive` then export with `-allowProvisioningUpdates`
+### Project Details
+- **iOS bundle:** `com.whussey.momentary`
+- **watchOS bundle:** `com.whussey.momentary.watchkitapp`
+- **Xcode project:** `Momentary/Momentary.xcodeproj`
+- **Current build:** 12 (v1.0)
+- **Dev team:** `R2C4T4N7US`
+- **Keychain service:** `com.whussey.momentary.openai`

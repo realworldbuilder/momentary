@@ -26,7 +26,9 @@ struct ActiveWorkoutView: View {
             if showSummary {
                 WorkoutSummaryView(
                     duration: workoutManager.elapsedTime,
-                    momentCount: workoutManager.momentCount
+                    momentCount: workoutManager.momentCount,
+                    averageHeartRate: workoutManager.healthKitService.averageHeartRate,
+                    totalCalories: workoutManager.healthKitService.totalActiveCalories
                 ) {
                     showSummary = false
                     workoutManager.completeWorkoutDismissal()
@@ -65,6 +67,8 @@ struct ActiveWorkoutView: View {
         VStack(spacing: 8) {
             workoutTimer
 
+            healthMetricsRow
+
             Spacer()
 
             momentRecordButton
@@ -90,6 +94,17 @@ struct ActiveWorkoutView: View {
                 .font(.system(.title2, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.6))
 
+            if workoutManager.healthKitService.heartRate > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "heart.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.red.opacity(0.5))
+                    Text("\(Int(workoutManager.healthKitService.heartRate))")
+                        .font(.caption)
+                }
+                .foregroundStyle(.white.opacity(0.4))
+            }
+
             HStack(spacing: 4) {
                 Image(systemName: "waveform")
                     .font(.caption)
@@ -109,6 +124,39 @@ struct ActiveWorkoutView: View {
             .font(.system(.title3, design: .monospaced))
             .foregroundStyle(.white)
             .accessibilityLabel("Workout time: \(spokenElapsed)")
+    }
+
+    // MARK: - Health Metrics
+
+    private var healthMetricsRow: some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 4) {
+                Image(systemName: "heart.fill")
+                    .foregroundStyle(.red)
+                    .font(.caption2)
+                Text(workoutManager.healthKitService.heartRate > 0
+                     ? "\(Int(workoutManager.healthKitService.heartRate))"
+                     : "--")
+                    .font(.system(.caption, design: .monospaced))
+                Text("BPM")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption2)
+                Text(workoutManager.healthKitService.activeCalories > 0
+                     ? "\(Int(workoutManager.healthKitService.activeCalories))"
+                     : "--")
+                    .font(.system(.caption, design: .monospaced))
+                Text("CAL")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .foregroundStyle(.white)
     }
 
     // MARK: - Record Button

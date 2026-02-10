@@ -59,10 +59,13 @@ final class WorkoutManager {
         }
     }
 
-    private func handleRemoteStop(workoutID: UUID) {
+    private func handleRemoteStop(workoutID: UUID, healthWorkoutUUID: UUID? = nil) {
         guard activeSession?.id == workoutID else { return }
         guard var session = activeSession else { return }
         session.endedAt = Date()
+        if let healthWorkoutUUID {
+            session.healthWorkoutUUID = healthWorkoutUUID
+        }
         workoutStore.saveSession(session)
         endingSessionID = session.id
         activeSession = nil
@@ -151,7 +154,7 @@ final class WorkoutManager {
                 }
             case .stop:
                 if self.activeSession?.id == message.workoutID {
-                    self.handleRemoteStop(workoutID: message.workoutID)
+                    self.handleRemoteStop(workoutID: message.workoutID, healthWorkoutUUID: message.healthWorkoutUUID)
                 }
             case .momentRecorded:
                 break

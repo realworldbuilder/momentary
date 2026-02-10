@@ -8,6 +8,9 @@ struct MomentaryWatchApp: App {
         WindowGroup {
             WatchRootView()
                 .environment(workoutManager)
+                .task {
+                    await workoutManager.healthKitService.requestAuthorization()
+                }
         }
     }
 }

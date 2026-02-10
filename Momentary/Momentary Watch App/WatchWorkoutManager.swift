@@ -10,6 +10,7 @@ final class WatchWorkoutManager {
     let recorder = AudioRecorderService()
     let connectivity = WatchConnectivityManager()
     let extendedSession = ExtendedSessionManager()
+    let healthKitService = HealthKitService()
 
     var isWorkoutActive = false
     var currentWorkoutID: UUID?
@@ -22,8 +23,6 @@ final class WatchWorkoutManager {
 
     private var workoutStartTime: Date?
     private var elapsedTimer: Timer?
-
-    var healthKitService: HealthKitService?
 
     init() {
         setupConnectivityCallbacks()
@@ -49,7 +48,7 @@ final class WatchWorkoutManager {
         connectivity.updateWorkoutContext(workoutID: workoutID, isActive: true, startedAt: workoutStartTime!)
 
         Task {
-            await healthKitService?.startWorkout()
+            await healthKitService.startWorkout()
         }
 
         Self.logger.info("Started workout \(workoutID)")
@@ -58,12 +57,16 @@ final class WatchWorkoutManager {
     func endWorkout() {
         guard let workoutID = currentWorkoutID else { return }
 
-        let message = WorkoutMessage(command: .stop, workoutID: workoutID)
+        let message = WorkoutMessage(
+            command: .stop,
+            workoutID: workoutID,
+            healthWorkoutUUID: healthKitService.workoutUUID
+        )
         connectivity.sendWorkoutCommand(message)
         connectivity.updateWorkoutContext(workoutID: workoutID, isActive: false, startedAt: nil)
 
         Task {
-            await healthKitService?.endWorkout()
+            await healthKitService.endWorkout()
         }
 
         stopElapsedTimer()
@@ -143,14 +146,14 @@ final class WatchWorkoutManager {
                     self.workoutStartTime = message.timestamp
                     self.extendedSession.startSession()
                     self.startElapsedTimer()
-                    Task { await self.healthKitService?.startWorkout() }
+                    Task { await self.healthKitService.startWorkout() }
                     self.connectivity.updateWorkoutContext(workoutID: message.workoutID, isActive: true, startedAt: message.timestamp)
                 }
             case .stop:
                 if self.currentWorkoutID == message.workoutID {
                     self.stopElapsedTimer()
                     self.extendedSession.endSession()
-                    Task { await self.healthKitService?.endWorkout() }
+                    Task { await self.healthKitService.endWorkout() }
                     self.didReceiveRemoteStop = true
                     self.connectivity.updateWorkoutContext(workoutID: message.workoutID, isActive: false, startedAt: nil)
                 }
@@ -179,11 +182,11 @@ final class WatchWorkoutManager {
                 self.workoutStartTime = startedAt ?? Date()
                 self.extendedSession.startSession()
                 self.startElapsedTimer()
-                Task { await self.healthKitService?.startWorkout() }
+                Task { await self.healthKitService.startWorkout() }
             } else if !isActive, self.isWorkoutActive, self.currentWorkoutID == workoutID {
                 self.stopElapsedTimer()
                 self.extendedSession.endSession()
-                Task { await self.healthKitService?.endWorkout() }
+                Task { await self.healthKitService.endWorkout() }
                 self.didReceiveRemoteStop = true
             }
         }

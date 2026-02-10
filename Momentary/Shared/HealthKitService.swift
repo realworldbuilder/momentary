@@ -4,7 +4,7 @@ import os
 
 @Observable
 @MainActor
-final class HealthKitService {
+final class HealthKitService: NSObject {
     private static let logger = Logger(subsystem: "com.whussey.momentary", category: "HealthKitService")
 
     private let healthStore = HKHealthStore()
@@ -15,6 +15,8 @@ final class HealthKitService {
 
     var heartRate: Double = 0
     var activeCalories: Double = 0
+    var averageHeartRate: Double = 0
+    var totalActiveCalories: Double = 0
     var isAuthorized = false
     var workoutUUID: UUID?
 
@@ -51,6 +53,12 @@ final class HealthKitService {
             await requestAuthorization()
         }
 
+        // Reset metrics
+        heartRate = 0
+        activeCalories = 0
+        averageHeartRate = 0
+        totalActiveCalories = 0
+
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .traditionalStrengthTraining
         configuration.locationType = .indoor
@@ -59,6 +67,7 @@ final class HealthKitService {
             let session = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
             let builder = session.associatedWorkoutBuilder()
             builder.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: configuration)
+            builder.delegate = self
 
             self.workoutSession = session
             self.workoutBuilder = builder
@@ -77,6 +86,17 @@ final class HealthKitService {
     func endWorkout() async {
         guard let session = workoutSession, let builder = workoutBuilder else { return }
 
+        // Capture final stats before cleanup
+        let hrType = HKQuantityType(.heartRate)
+        let calType = HKQuantityType(.activeEnergyBurned)
+
+        if let avgHR = builder.statistics(for: hrType)?.averageQuantity() {
+            averageHeartRate = avgHR.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+        }
+        if let totalCal = builder.statistics(for: calType)?.sumQuantity() {
+            totalActiveCalories = totalCal.doubleValue(for: .kilocalorie())
+        }
+
         session.end()
 
         do {
@@ -92,15 +112,52 @@ final class HealthKitService {
     }
     #else
     func startWorkout() async {
-        guard isHealthKitAvailable, !isAuthorized else {
+        guard isHealthKitAvailable else {
             if !isAuthorized { await requestAuthorization() }
             return
         }
-        // On iPhone without watch, we'll save a post-hoc workout on end
     }
 
     func endWorkout() async {
-        // Save a post-hoc workout using HKWorkoutBuilder if needed
+        // On iPhone without watch, no live workout to end
     }
     #endif
 }
+
+// MARK: - HKLiveWorkoutBuilderDelegate
+
+#if os(watchOS)
+extension HealthKitService: HKLiveWorkoutBuilderDelegate {
+    nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {
+        // No-op: we don't track workout events
+    }
+
+    nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
+        let hrType = HKQuantityType(.heartRate)
+        let calType = HKQuantityType(.activeEnergyBurned)
+
+        for type in collectedTypes {
+            guard let quantityType = type as? HKQuantityType else { continue }
+
+            switch quantityType {
+            case hrType:
+                if let mostRecent = workoutBuilder.statistics(for: hrType)?.mostRecentQuantity() {
+                    let bpm = mostRecent.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    Task { @MainActor in
+                        self.heartRate = bpm
+                    }
+                }
+            case calType:
+                if let sum = workoutBuilder.statistics(for: calType)?.sumQuantity() {
+                    let kcal = sum.doubleValue(for: .kilocalorie())
+                    Task { @MainActor in
+                        self.activeCalories = kcal
+                    }
+                }
+            default:
+                break
+            }
+        }
+    }
+}
+#endif

@@ -401,6 +401,7 @@ struct WorkoutMessage: Codable {
     var confidence: Double?
     var timestamp: Date
     var error: String?
+    var healthWorkoutUUID: UUID?
 
     init(
         command: WorkoutCommand,
@@ -409,7 +410,8 @@ struct WorkoutMessage: Codable {
         transcript: String? = nil,
         confidence: Double? = nil,
         timestamp: Date = Date(),
-        error: String? = nil
+        error: String? = nil,
+        healthWorkoutUUID: UUID? = nil
     ) {
         self.command = command
         self.workoutID = workoutID
@@ -418,6 +420,7 @@ struct WorkoutMessage: Codable {
         self.confidence = confidence
         self.timestamp = timestamp
         self.error = error
+        self.healthWorkoutUUID = healthWorkoutUUID
     }
 
     func toDictionary() -> [String: Any] {
@@ -430,6 +433,7 @@ struct WorkoutMessage: Codable {
         if let transcript { dict["transcript"] = transcript }
         if let confidence { dict["confidence"] = confidence }
         if let error { dict["error"] = error }
+        if let healthWorkoutUUID { dict["healthWorkoutUUID"] = healthWorkoutUUID.uuidString }
         return dict
     }
 
@@ -449,7 +453,8 @@ struct WorkoutMessage: Codable {
             transcript: dict["transcript"] as? String,
             confidence: dict["confidence"] as? Double,
             timestamp: Date(timeIntervalSince1970: timestampInterval),
-            error: dict["error"] as? String
+            error: dict["error"] as? String,
+            healthWorkoutUUID: (dict["healthWorkoutUUID"] as? String).flatMap(UUID.init)
         )
     }
 }

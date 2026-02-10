@@ -3,6 +3,8 @@ import SwiftUI
 struct WorkoutSummaryView: View {
     let duration: TimeInterval
     let momentCount: Int
+    let averageHeartRate: Double
+    let totalCalories: Double
     let onDismiss: () -> Void
 
     var body: some View {
@@ -31,6 +33,40 @@ struct WorkoutSummaryView: View {
                     Text("Moments")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            if averageHeartRate > 0 || totalCalories > 0 {
+                HStack(spacing: 20) {
+                    if averageHeartRate > 0 {
+                        VStack(spacing: 4) {
+                            HStack(spacing: 2) {
+                                Image(systemName: "heart.fill")
+                                    .font(.caption2)
+                                    .foregroundStyle(.red)
+                                Text("\(Int(averageHeartRate))")
+                                    .font(.title3)
+                            }
+                            Text("Avg BPM")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if totalCalories > 0 {
+                        VStack(spacing: 4) {
+                            HStack(spacing: 2) {
+                                Image(systemName: "flame.fill")
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+                                Text("\(Int(totalCalories))")
+                                    .font(.title3)
+                            }
+                            Text("Calories")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
 
