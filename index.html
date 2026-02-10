@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Momentary - Workout Notebook for Your Wrist</title>
-  <meta name="description" content="A workout notebook built with SwiftUI, WhisperKit, and GPT-4o. Record voice moments on Apple Watch, get structured logs and insights on iPhone.">
+  <meta name="description" content="Record voice moments on your Apple Watch between sets. AI turns them into structured workout logs, insights, and social content.">
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -31,13 +31,13 @@
     </div>
     <h1 class="hero-title">Momentary</h1>
     <p class="hero-tagline">A workout notebook for your wrist</p>
-    <p class="hero-subtitle">SwiftUI + WhisperKit + GPT-4o. Record voice moments on Apple Watch, get structured workout logs and training insights on iPhone.</p>
-    <a href="#gameplan" class="app-store-badge">Coming to TestFlight</a>
+    <p class="hero-subtitle">Talk to your Watch between sets. AI handles the rest — structured logs, training insights, even social posts.</p>
+    <a href="#gameplan" class="app-store-badge">On TestFlight Now</a>
   </section>
 
   <!-- Status Banner -->
   <section class="status-banner">
-    <strong>Status:</strong> Feature-complete, heading to TestFlight. 5 phases done, Build 17. This is a personal project — you're seeing it early.
+    <strong>Status:</strong> Currently testing on TestFlight — actually using it at the gym. This is a personal project, you're seeing it early.
   </section>
 
   <!-- Features -->
@@ -47,87 +47,89 @@
       <div class="feature-card">
         <span class="feature-icon">🎙️</span>
         <h3>Voice Moments</h3>
-        <p>Record on Watch or iPhone. WhisperKit transcribes on-device — no server, no delay.</p>
+        <p>Record on your Watch or iPhone between sets. Transcription happens on your device — nothing gets uploaded.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">🤖</span>
         <h3>AI Workout Logs</h3>
-        <p>GPT-4o structures your voice into exercises, sets, reps, and weights. Edit inline if it gets something wrong.</p>
+        <p>AI turns your voice into a real workout log — exercises, sets, reps, weights. You can edit anything it gets wrong.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">❤️</span>
-        <h3>HealthKit</h3>
-        <p>Live heart rate and calories during your session. Syncs to Apple Health as strength training.</p>
+        <h3>Live Health Data</h3>
+        <p>Heart rate and calories tracked live during your session. Saves to Apple Health as a strength training workout.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">📊</span>
         <h3>Insights</h3>
-        <p>Cross-workout analysis, weekly stats, and a story viewer — all built with Swift Charts.</p>
+        <p>See trends across workouts — volume, frequency, muscle groups. Weekly stats and a story viewer to swipe through.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">📱</span>
         <h3>Social Content</h3>
-        <p>AI generates Instagram captions, tweet threads, and reel scripts from your session.</p>
+        <p>AI writes Instagram captions, tweet threads, and reel scripts from your session. Post-worthy without the effort.</p>
       </div>
       <div class="feature-card">
         <span class="feature-icon">⚙️</span>
-        <h3>Offline &amp; Settings</h3>
-        <p>Offline queue auto-retries when you're back online. Custom API key, weight units, data export.</p>
+        <h3>Works Offline</h3>
+        <p>No signal at the gym? No problem. Everything queues up and processes when you're back online.</p>
       </div>
     </div>
   </section>
 
-  <!-- How It Actually Works -->
+  <!-- How It Works -->
   <section class="how-it-works">
-    <h2>How It Actually Works</h2>
+    <h2>How It Works</h2>
     <div class="flow-steps">
       <div class="flow-step">
         <div class="flow-number">1</div>
-        <p>Start a workout on your Watch. Record voice moments between sets — "just did 4 sets of bench, 185 for 8."</p>
+        <p>Start a workout on your Watch. Between sets, tap record and say what you did — "bench press, 4 sets of 8 at 185."</p>
       </div>
       <div class="flow-step">
         <div class="flow-number">2</div>
-        <p>Audio transfers to iPhone. WhisperKit transcribes everything locally — nothing leaves your device.</p>
+        <p>Your voice gets transcribed right on your phone. No cloud, no waiting — it just works.</p>
       </div>
       <div class="flow-step">
         <div class="flow-number">3</div>
-        <p>End your workout. GPT-4o generates a structured log, social content, and training insights.</p>
+        <p>End your workout and AI puts it all together — a structured log, training insights, and ready-to-post social content.</p>
       </div>
     </div>
   </section>
 
   <!-- Gameplan -->
   <section class="gameplan" id="gameplan">
-    <h2>Gameplan &amp; Next Steps</h2>
+    <h2>Where It's At</h2>
     <div class="gameplan-grid">
       <div class="gameplan-card done">
-        <h3>Done</h3>
+        <h3>Working Now</h3>
         <ul>
-          <li>Voice recording + on-device transcription</li>
-          <li>AI processing pipeline with offline queue</li>
-          <li>HealthKit integration (live HR + calories)</li>
-          <li>Insights dashboard with Swift Charts</li>
-          <li>Inline workout editing</li>
-          <li>Settings (units, API key, export/delete)</li>
-          <li>Cross-device sync</li>
+          <li>Voice recording on Watch and iPhone</li>
+          <li>On-device transcription</li>
+          <li>AI-generated workout logs</li>
+          <li>Live heart rate and calorie tracking</li>
+          <li>Training insights and charts</li>
+          <li>Social content generation</li>
+          <li>Inline editing of workout logs</li>
+          <li>Offline mode with auto-retry</li>
+          <li>Watch-to-iPhone sync</li>
         </ul>
       </div>
       <div class="gameplan-card next">
-        <h3>Up Next</h3>
+        <h3>Working On</h3>
         <ul>
-          <li>Active workout tab polish (timer animations, waveform)</li>
-          <li>HealthKit testing on physical Watch</li>
-          <li>TestFlight deployment</li>
-          <li>End-to-end testing across all workflows</li>
+          <li>Polish the active workout screen</li>
+          <li>Real-world gym testing</li>
+          <li>Squashing bugs from TestFlight</li>
+          <li>Getting it ready for the App Store</li>
         </ul>
       </div>
       <div class="gameplan-card someday">
-        <h3>Someday Maybe</h3>
+        <h3>Down the Road</h3>
         <ul>
-          <li>App Store submission</li>
-          <li>Cardio workout types</li>
-          <li>Workout templates and programming</li>
-          <li>Social sharing / export to other apps</li>
+          <li>App Store release</li>
+          <li>Cardio and other workout types</li>
+          <li>Workout templates and programs</li>
+          <li>Export and share to other apps</li>
         </ul>
       </div>
     </div>
@@ -135,7 +137,7 @@
 
   <!-- Footer -->
   <footer class="footer">
-    <p>Build ~17 · Made by Will · <a href="mailto:williamhussey33@gmail.com">williamhussey33@gmail.com</a></p>
+    <p>Made by Will · <a href="mailto:williamhussey33@gmail.com">williamhussey33@gmail.com</a></p>
   </footer>
 
 </body>
