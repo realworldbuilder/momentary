@@ -17,7 +17,7 @@ struct InsightsTab: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                LazyVStack(spacing: 16) {
                     // Story Carousel
                     if !insightsService.stories.isEmpty {
                         storyCarouselSection
@@ -40,8 +40,9 @@ struct InsightsTab: View {
                         recentInsightsSection
                     }
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, 24)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Insights")
             .navigationDestination(for: UUID.self) { workoutID in
                 WorkoutDetailView(workoutID: workoutID)
@@ -60,8 +61,9 @@ struct InsightsTab: View {
     // MARK: - Story Carousel Section
     private var storyCarouselSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Stories")
-                .font(.headline)
+            Label("Stories", systemImage: "sparkles")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
                 .padding(.horizontal)
 
             StoryCarouselView(stories: insightsService.stories) { index in
@@ -74,8 +76,9 @@ struct InsightsTab: View {
     // MARK: - Dashboard Section
     private var dashboardSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("This Week")
-                .font(.headline)
+            Label("This Week", systemImage: "chart.bar.fill")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
                 .padding(.horizontal)
 
             LazyVGrid(columns: [
@@ -93,8 +96,9 @@ struct InsightsTab: View {
     // MARK: - Recent Insights Section
     private var recentInsightsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Insights")
-                .font(.headline)
+            Label("Recent Insights", systemImage: "lightbulb.fill")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
                 .padding(.horizontal)
 
             if !allTags.isEmpty {
@@ -199,9 +203,8 @@ struct InsightsTab: View {
                 }
             }
         }
-        .padding(12)
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -242,9 +245,8 @@ struct MetricCard: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(12)
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
