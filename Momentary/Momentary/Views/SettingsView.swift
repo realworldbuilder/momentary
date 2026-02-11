@@ -61,7 +61,7 @@ struct SettingsView: View {
             Section {
                 HStack {
                     Image(systemName: hasCustomAPIKey ? "key.fill" : "checkmark.circle.fill")
-                        .foregroundStyle(hasCustomAPIKey ? .orange : .green)
+                        .foregroundStyle(hasCustomAPIKey ? .orange : Theme.accent)
                     Text(hasCustomAPIKey ? "Using Custom API Key" : "Using Built-in API Key")
                 }
 
@@ -76,7 +76,7 @@ struct SettingsView: View {
                         Button("Save Key") { saveCustomAPIKey() }
                             .disabled(customAPIKey.isEmpty)
                             .buttonStyle(.borderedProminent)
-                            .tint(.green)
+                            .tint(Theme.accent)
 
                         if hasCustomAPIKey {
                             Button("Remove Key", role: .destructive) {
@@ -105,7 +105,7 @@ struct SettingsView: View {
                 if apiKeySaved {
                     Text("API key saved to Keychain")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Theme.accent)
                 }
             } header: {
                 Text("OpenAI")
@@ -120,7 +120,10 @@ struct SettingsView: View {
                 LabeledContent("Transcription", value: "WhisperKit")
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Theme.background)
         .navigationTitle("Settings")
+        .toolbarBackground(Theme.background, for: .navigationBar)
         .confirmationDialog(
             "Delete All Workout Data?",
             isPresented: $showDeleteConfirmation,

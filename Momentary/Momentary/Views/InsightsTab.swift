@@ -42,8 +42,9 @@ struct InsightsTab: View {
                 }
                 .padding(.bottom, 24)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Theme.background)
             .navigationTitle("Insights")
+            .toolbarBackground(Theme.background, for: .navigationBar)
             .navigationDestination(for: UUID.self) { workoutID in
                 WorkoutDetailView(workoutID: workoutID)
             }
@@ -178,10 +179,10 @@ struct InsightsTab: View {
             HStack(spacing: 4) {
                 Image(systemName: "dumbbell.fill")
                     .font(.caption2)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.accent)
                 Text(linked.workoutDate, format: .dateTime.month(.abbreviated).day())
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.accent)
             }
 
             if !linked.story.tags.isEmpty {
@@ -196,8 +197,7 @@ struct InsightsTab: View {
                 }
             }
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 }
 
@@ -238,8 +238,7 @@ struct MetricCard: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 }
 
@@ -257,10 +256,10 @@ struct FilterChip: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(
-                    isSelected ? Color.green.opacity(0.2) : Color.secondary.opacity(0.1),
+                    isSelected ? Theme.accentSubtle : Theme.cardBackground,
                     in: Capsule()
                 )
-                .foregroundStyle(isSelected ? .green : .secondary)
+                .foregroundStyle(isSelected ? Theme.accent : Theme.textSecondary)
         }
         .buttonStyle(.plain)
     }

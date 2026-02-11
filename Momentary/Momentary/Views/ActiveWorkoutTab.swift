@@ -7,10 +7,6 @@ struct ActiveWorkoutTab: View {
     @State private var showMicPermissionDenied = false
     @State private var showEndConfirmation = false
 
-    private var startGradient: [Color] {
-        [Color(red: 0.3, green: 0.85, blue: 0.2), Color(red: 0.1, green: 0.65, blue: 0.25)]
-    }
-
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -22,8 +18,10 @@ struct ActiveWorkoutTab: View {
 
                 bottomControls
             }
+            .background(Theme.background)
             .navigationTitle("Active Workout")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.background, for: .navigationBar)
             .alert("Microphone Access Required", isPresented: $showMicPermissionDenied) {
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -59,7 +57,7 @@ struct ActiveWorkoutTab: View {
                     systemImage: "waveform"
                 )
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
                 if workoutManager.isProcessingMoment {
                     HStack(spacing: 4) {
@@ -67,14 +65,14 @@ struct ActiveWorkoutTab: View {
                             .controlSize(.small)
                         Text("Transcribing...")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     }
                 }
             }
         }
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial)
+        .background(Theme.cardBackground)
     }
 
     // MARK: - Moments Feed
@@ -82,23 +80,27 @@ struct ActiveWorkoutTab: View {
     private var momentsFeed: some View {
         Group {
             if let session = workoutManager.activeSession, !session.moments.isEmpty {
-                List {
-                    ForEach(session.moments.reversed()) { moment in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(moment.transcript)
-                                .font(.body)
-                            HStack {
-                                Text(moment.timestamp, style: .time)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                if moment.source == .watch {
-                                    Image(systemName: "applewatch")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
+                ScrollView {
+                    LazyVStack(spacing: 1) {
+                        ForEach(session.moments.reversed()) { moment in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(moment.transcript)
+                                    .font(.body)
+                                HStack {
+                                    Text(moment.timestamp, style: .time)
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.textSecondary)
+                                    if moment.source == .watch {
+                                        Image(systemName: "applewatch")
+                                            .font(.caption2)
+                                            .foregroundStyle(Theme.textSecondary)
+                                    }
                                 }
                             }
+                            .padding(.horizontal)
+                            .padding(.vertical, 10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(.vertical, 2)
                     }
                 }
             } else {
@@ -127,7 +129,7 @@ struct ActiveWorkoutTab: View {
                         .font(.headline)
                         .foregroundStyle(.white)
                         .frame(width: 80, height: 44)
-                        .background(.red, in: RoundedRectangle(cornerRadius: 12))
+                        .background(.red, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
                 }
 
                 Button {
@@ -141,22 +143,14 @@ struct ActiveWorkoutTab: View {
                         .font(.title2)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: startGradient,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            in: Circle()
-                        )
-                        .shadow(radius: 4)
+                        .background(Theme.accent, in: Circle())
                 }
                 .accessibilityLabel(recorder.isRecording ? "Stop recording" : "Record moment")
             }
             .padding(.bottom, 16)
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(Theme.background)
     }
 
     // MARK: - Recording Overlay

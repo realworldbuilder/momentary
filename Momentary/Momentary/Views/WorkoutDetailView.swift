@@ -35,6 +35,7 @@ struct WorkoutDetailView: View {
         }
         .navigationTitle("Workout")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.background, for: .navigationBar)
         .onAppear {
             session = workoutManager.workoutStore.loadSession(id: workoutID)
         }
@@ -101,7 +102,7 @@ struct WorkoutDetailView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Theme.background)
     }
 
     // MARK: - Hero Section
@@ -127,12 +128,11 @@ struct WorkoutDetailView: View {
             if volume > 0 {
                 Text("\(formatVolume(volume)) \(weightUnit) total volume")
                     .font(.subheadline.bold())
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.accent)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .themeCard(cornerRadius: Theme.radiusLarge)
     }
 
     private func statPill(icon: String, value: String, label: String) -> some View {
@@ -160,8 +160,7 @@ struct WorkoutDetailView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .themeCard()
         }
 
         if case .failed(let message) = aiPipeline.state {
@@ -182,8 +181,7 @@ struct WorkoutDetailView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .themeCard()
         }
 
         if aiPipeline.state == .queued {
@@ -199,8 +197,7 @@ struct WorkoutDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .themeCard()
         }
     }
 
@@ -260,8 +257,7 @@ struct WorkoutDetailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .themeCard()
         }
     }
 
@@ -383,8 +379,7 @@ struct WorkoutDetailView: View {
                 }
                 .buttonStyle(.borderless)
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .themeCard()
         }
     }
 
@@ -399,8 +394,7 @@ struct WorkoutDetailView: View {
                 .font(.subheadline)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 
     // MARK: - Highlights
@@ -416,14 +410,13 @@ struct WorkoutDetailView: View {
                         .font(.caption)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .background(.green.opacity(0.12), in: Capsule())
-                        .foregroundStyle(.green)
+                        .background(Theme.accentSubtle, in: Capsule())
+                        .foregroundStyle(Theme.accent)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 
     // MARK: - Ambiguities
@@ -447,8 +440,7 @@ struct WorkoutDetailView: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(.orange)
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 
     // MARK: - Content Pack
@@ -486,8 +478,7 @@ struct WorkoutDetailView: View {
             Label(title, systemImage: icon)
                 .font(.subheadline.bold())
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 
     private func storyCardsDisclosure(_ cards: [StoryCard]) -> some View {
@@ -505,8 +496,7 @@ struct WorkoutDetailView: View {
             Label("Story Cards", systemImage: "rectangle.stack")
                 .font(.subheadline.bold())
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 
     // MARK: - Insights
@@ -522,14 +512,13 @@ struct WorkoutDetailView: View {
                         .font(.caption2)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .background(.green.opacity(0.15), in: Capsule())
+                        .background(Theme.accentSubtle, in: Capsule())
                 }
                 Text(story.body)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .themeCard()
         }
     }
 
@@ -559,8 +548,7 @@ struct WorkoutDetailView: View {
             Label("Transcript (\(moments.count) moments)", systemImage: "waveform")
                 .font(.subheadline.bold())
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .themeCard()
     }
 
     // MARK: - Actions

@@ -4,6 +4,14 @@ struct MainTabView: View {
     @Environment(WorkoutManager.self) private var workoutManager
     @State private var selectedTab = 0
 
+    init() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .black
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             HomeView()
@@ -26,6 +34,7 @@ struct MainTabView: View {
                 }
                 .tag(2)
         }
+        .tint(Theme.accent)
         .onChange(of: workoutManager.activeSession?.id) { oldVal, newVal in
             if newVal != nil && oldVal == nil {
                 selectedTab = 1

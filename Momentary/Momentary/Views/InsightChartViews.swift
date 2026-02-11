@@ -69,7 +69,7 @@ struct VolumeOverTimeChart: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.1))
+                .fill(Theme.cardBackground)
         )
     }
 
@@ -147,7 +147,7 @@ struct ProgressTrendChart: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.1))
+                .fill(Theme.cardBackground)
         )
     }
 }
@@ -210,7 +210,7 @@ struct PRComparisonChart: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.1))
+                .fill(Theme.cardBackground)
         )
     }
 }

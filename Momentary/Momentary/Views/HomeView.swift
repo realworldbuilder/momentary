@@ -8,16 +8,13 @@ struct HomeView: View {
     @State private var showMicPermissionDenied = false
     @AppStorage("weightUnit") private var weightUnit: String = WeightUnit.lbs.rawValue
 
-    private var startGradient: [Color] {
-        [Color(red: 0.3, green: 0.85, blue: 0.2), Color(red: 0.1, green: 0.65, blue: 0.25)]
-    }
-
     var body: some View {
         NavigationStack {
             Group {
                 mainContent
             }
             .navigationTitle("Momentary")
+            .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
@@ -103,6 +100,8 @@ struct HomeView: View {
                         NavigationLink(value: entry.id) {
                             workoutRow(entry)
                         }
+                        .listRowBackground(Theme.cardBackground)
+                        .listRowSeparatorTint(Theme.divider)
                     }
                     .onDelete { offsets in
                         let ids = offsets.map { workoutManager.workoutStore.index[$0].id }
@@ -113,6 +112,9 @@ struct HomeView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Theme.background)
+        .listRowSeparator(.hidden)
         .navigationDestination(for: UUID.self) { workoutID in
             WorkoutDetailView(workoutID: workoutID)
         }
@@ -128,29 +130,27 @@ struct HomeView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "figure.strengthtraining.traditional")
                         .font(.system(size: 36, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.accent)
 
                     Text("Start Workout")
                         .font(.title3.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.textPrimary)
 
                     Text("Use Apple Watch for best experience")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 24)
-                .background(
-                    LinearGradient(
-                        colors: startGradient,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: 16)
+                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusLarge))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radiusLarge)
+                        .stroke(Theme.accent.opacity(0.3), lineWidth: 1)
                 )
             }
             .buttonStyle(.plain)
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            .listRowBackground(Color.clear)
         }
     }
 
@@ -162,21 +162,22 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(.green)
+                            .fill(Theme.accent)
                             .frame(width: 8, height: 8)
                         Text("Workout Active")
                             .font(.headline)
                     }
                     Text("\(workoutManager.activeSession?.moments.count ?? 0) moments")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer()
                 Text("View")
                     .font(.subheadline.bold())
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.accent)
             }
             .padding(.vertical, 4)
+            .listRowBackground(Theme.cardBackground)
         }
     }
 
@@ -208,6 +209,7 @@ struct HomeView: View {
                 }
             }
             .padding(.vertical, 4)
+            .listRowBackground(Theme.cardBackground)
         }
     }
 
@@ -243,7 +245,7 @@ struct HomeView: View {
                 }
                 if entry.hasStructuredLog {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Theme.accent)
                         .font(.caption)
                 }
             }
@@ -254,7 +256,7 @@ struct HomeView: View {
                 if entry.totalVolume > 0 {
                     Text("\(formatVolume(entry.totalVolume)) \(weightUnit)")
                         .font(.caption.bold())
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Theme.accent)
                 }
                 if !entry.exerciseNames.isEmpty {
                     Text(entry.exerciseNames.joined(separator: ", "))

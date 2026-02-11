@@ -33,31 +33,27 @@ struct StoryBadgeView: View {
         Button(action: action) {
             VStack(spacing: 10) {
                 ZStack {
-                    // Gradient ring
+                    // Subtle ring
                     Circle()
                         .stroke(
-                            LinearGradient(
-                                colors: [.green, .green.opacity(0.6)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
+                            Theme.accent.opacity(isUnread ? 0.8 : 0.4),
                             lineWidth: isUnread ? 3 : 2
                         )
                         .frame(width: 64, height: 64)
 
                     // Icon background
                     Circle()
-                        .fill(Color.green.opacity(0.15))
+                        .fill(Theme.cardBackground)
                         .frame(width: 56, height: 56)
 
                     // Icon
                     Image(systemName: story.type.systemIcon)
                         .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Theme.textPrimary)
                 }
                 .overlay(
                     Circle()
-                        .stroke(Color.green.opacity(glowPhase ? 0.6 : 0), lineWidth: 2)
+                        .stroke(Theme.accent.opacity(glowPhase ? 0.6 : 0), lineWidth: 2)
                         .frame(width: 68, height: 68)
                         .scaleEffect(glowPhase ? 1.1 : 1.0)
                 )

@@ -221,7 +221,7 @@ struct InsightStoryView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "lightbulb.fill")
-                    .foregroundColor(.green.opacity(0.8))
+                    .foregroundColor(Theme.accent.opacity(0.8))
                 Text("Action Item")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -233,7 +233,7 @@ struct InsightStoryView: View {
                 .foregroundColor(.white.opacity(0.9))
         }
         .padding(16)
-        .background(Color.green.opacity(0.1))
+        .background(Theme.cardBackground)
         .cornerRadius(16)
     }
 

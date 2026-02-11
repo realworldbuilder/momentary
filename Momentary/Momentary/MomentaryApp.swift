@@ -23,6 +23,7 @@ struct MomentaryApp: App {
                 .environment(workoutManager)
                 .environment(aiPipeline)
                 .environment(insightsService)
+                .preferredColorScheme(.dark)
                 .task {
                     await aiPipeline.processPendingQueue()
                     await insightsService.generateInsights()
