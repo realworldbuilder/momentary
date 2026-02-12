@@ -32,6 +32,12 @@
 		A1000028 /* StoryCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000028 /* StoryCarouselView.swift */; };
 		A1000029 /* InsightChartViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000029 /* InsightChartViews.swift */; };
 		A1000030 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000030 /* Theme.swift */; };
+		A1000031 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000031 /* ChatModels.swift */; };
+		A1000032 /* ChatPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000032 /* ChatPromptBuilder.swift */; };
+		A1000033 /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000033 /* ChatService.swift */; };
+		A1000034 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000034 /* ChatView.swift */; };
+		A1000035 /* ChatMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000035 /* ChatMessageView.swift */; };
+		A1000036 /* ChatBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000036 /* ChatBlockView.swift */; };
 		A2000001 /* MomentaryWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* MomentaryWatchApp.swift */; };
 		A2000003 /* AudioRecorderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* AudioRecorderService.swift */; };
 		A2000004 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* WatchConnectivityManager.swift */; };
@@ -111,6 +117,12 @@
 		B1000028 /* StoryCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryCarouselView.swift; sourceTree = "<group>"; };
 		B1000029 /* InsightChartViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightChartViews.swift; sourceTree = "<group>"; };
 		B1000030 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B1000031 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
+		B1000032 /* ChatPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPromptBuilder.swift; sourceTree = "<group>"; };
+		B1000033 /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
+		B1000034 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		B1000035 /* ChatMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageView.swift; sourceTree = "<group>"; };
+		B1000036 /* ChatBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBlockView.swift; sourceTree = "<group>"; };
 		B1000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2000005 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C1000001 /* Momentary.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Momentary.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -170,6 +182,9 @@
 				B1000024 /* APIKeyProvider.swift */,
 				B1000025 /* StoryReadTracker.swift */,
 				B1000026 /* InsightsService.swift */,
+				B1000031 /* ChatModels.swift */,
+				B1000032 /* ChatPromptBuilder.swift */,
+				B1000033 /* ChatService.swift */,
 				F2000002 /* Views */,
 				B1000007 /* Assets.xcassets */,
 			);
@@ -189,6 +204,9 @@
 				B1000028 /* StoryCarouselView.swift */,
 				B1000029 /* InsightChartViews.swift */,
 				B1000030 /* Theme.swift */,
+				B1000034 /* ChatView.swift */,
+				B1000035 /* ChatMessageView.swift */,
+				B1000036 /* ChatBlockView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -353,6 +371,12 @@
 				A1000028 /* StoryCarouselView.swift in Sources */,
 				A1000029 /* InsightChartViews.swift in Sources */,
 				A1000030 /* Theme.swift in Sources */,
+				A1000031 /* ChatModels.swift in Sources */,
+				A1000032 /* ChatPromptBuilder.swift in Sources */,
+				A1000033 /* ChatService.swift in Sources */,
+				A1000034 /* ChatView.swift in Sources */,
+				A1000035 /* ChatMessageView.swift in Sources */,
+				A1000036 /* ChatBlockView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -515,7 +539,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Momentary/Momentary.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -552,7 +576,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Momentary/Momentary.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -590,7 +614,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Momentary Watch App/Momentary Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -624,7 +648,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Momentary Watch App/Momentary Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
