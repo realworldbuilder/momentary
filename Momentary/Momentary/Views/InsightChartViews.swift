@@ -71,6 +71,7 @@ struct VolumeOverTimeChart: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Theme.cardBackground)
         )
+        .accessibilityLabel("Volume trend chart")
     }
 
     private func formatVolume(_ volume: Double) -> String {
@@ -149,6 +150,7 @@ struct ProgressTrendChart: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Theme.cardBackground)
         )
+        .accessibilityLabel("Progress trend chart")
     }
 }
 
@@ -212,6 +214,7 @@ struct PRComparisonChart: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Theme.cardBackground)
         )
+        .accessibilityLabel("Personal records comparison chart")
     }
 }
 

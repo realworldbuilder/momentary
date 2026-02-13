@@ -38,6 +38,7 @@
 		A1000034 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000034 /* ChatView.swift */; };
 		A1000035 /* ChatMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000035 /* ChatMessageView.swift */; };
 		A1000036 /* ChatBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000036 /* ChatBlockView.swift */; };
+		A1000037 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000037 /* HapticService.swift */; };
 		A2000001 /* MomentaryWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* MomentaryWatchApp.swift */; };
 		A2000003 /* AudioRecorderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* AudioRecorderService.swift */; };
 		A2000004 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* WatchConnectivityManager.swift */; };
@@ -123,6 +124,7 @@
 		B1000034 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		B1000035 /* ChatMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageView.swift; sourceTree = "<group>"; };
 		B1000036 /* ChatBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBlockView.swift; sourceTree = "<group>"; };
+		B1000037 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		B1000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2000005 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C1000001 /* Momentary.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Momentary.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -185,6 +187,7 @@
 				B1000031 /* ChatModels.swift */,
 				B1000032 /* ChatPromptBuilder.swift */,
 				B1000033 /* ChatService.swift */,
+				B1000037 /* HapticService.swift */,
 				F2000002 /* Views */,
 				B1000007 /* Assets.xcassets */,
 			);
@@ -377,6 +380,7 @@
 				A1000034 /* ChatView.swift in Sources */,
 				A1000035 /* ChatMessageView.swift in Sources */,
 				A1000036 /* ChatBlockView.swift in Sources */,
+				A1000037 /* HapticService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -539,7 +543,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Momentary/Momentary.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -576,7 +580,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Momentary/Momentary.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -614,7 +618,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Momentary Watch App/Momentary Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;
@@ -648,7 +652,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Momentary Watch App/Momentary Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "";
 				INFOPLIST_KEY_CFBundleDisplayName = Momentary;

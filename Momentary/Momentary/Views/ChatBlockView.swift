@@ -5,6 +5,8 @@ struct ChatBlockView: View {
     let block: ChatBlock
     var onAction: ((ChatAction) -> Void)?
     var onWorkoutTap: ((UUID) -> Void)?
+    var onRetry: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
 
     var body: some View {
         switch block.type {
@@ -24,6 +26,8 @@ struct ChatBlockView: View {
             ActionButtonsBlockView(payload: block.payload, onAction: onAction)
         case .workoutList:
             WorkoutListBlockView(payload: block.payload, onWorkoutTap: onWorkoutTap)
+        case .error:
+            ErrorBlockView(payload: block.payload, onRetry: onRetry, onOpenSettings: onOpenSettings)
         }
     }
 }
@@ -40,11 +44,125 @@ private struct TextBlockView: View {
     }
 }
 
+// MARK: - Error Block
+
+private struct ErrorBlockView: View {
+    let payload: ChatBlockPayload
+    var onRetry: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
+    @State private var countdown: Double = 0
+
+    private var errorType: String { payload.errorType ?? "unknown" }
+    private var errorMessage: String { payload.errorMessage ?? "Something went wrong." }
+
+    private var accentColor: Color {
+        switch errorType {
+        case "noAPIKey": return .orange
+        case "rateLimited": return .yellow
+        default: return .red
+        }
+    }
+
+    private var iconName: String {
+        switch errorType {
+        case "noAPIKey": return "key.slash"
+        case "networkError": return "wifi.slash"
+        case "rateLimited": return "clock.badge.exclamationmark"
+        case "timeout": return "clock.badge.exclamationmark"
+        default: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: iconName)
+                    .foregroundColor(accentColor)
+                    .font(.title3)
+                Text(errorMessage)
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textPrimary)
+            }
+
+            HStack(spacing: 10) {
+                if errorType == "noAPIKey" {
+                    Button {
+                        onOpenSettings?()
+                    } label: {
+                        Text("Open Settings")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Color.orange.opacity(0.15), in: Capsule())
+                    }
+                    .accessibilityLabel("Open Settings")
+                }
+
+                if errorType == "rateLimited", countdown > 0 {
+                    Text("Retry in \(Int(countdown))s")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                } else {
+                    Button {
+                        onRetry?()
+                    } label: {
+                        Text("Retry")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(accentColor)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(accentColor.opacity(0.15), in: Capsule())
+                    }
+                    .accessibilityLabel("Retry sending message")
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                .fill(accentColor.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                        .stroke(accentColor.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .accessibilityLabel(errorMessage)
+        .onAppear {
+            if errorType == "rateLimited", let retryAfter = payload.retryAfterSeconds {
+                countdown = retryAfter
+                startCountdown()
+            }
+        }
+    }
+
+    private func startCountdown() {
+        guard countdown > 0 else { return }
+        Task { @MainActor in
+            while countdown > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                countdown -= 1
+            }
+        }
+    }
+}
+
 // MARK: - Workout Summary Block
 
 private struct WorkoutSummaryBlockView: View {
     let payload: ChatBlockPayload
     var onWorkoutTap: ((UUID) -> Void)?
+
+    private var accessibilityDescription: String {
+        var parts: [String] = []
+        if let date = payload.date { parts.append(date) }
+        if let duration = payload.duration { parts.append(duration) }
+        if let count = payload.exerciseCount { parts.append("\(count) exercises") }
+        if let volume = payload.totalVolume, volume > 0 { parts.append(formatVolume(volume)) }
+        return "Workout: " + parts.joined(separator: ", ")
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -80,6 +198,9 @@ private struct WorkoutSummaryBlockView: View {
             }
         }
         .themeCard()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityDescription)
+        .accessibilityHint("Double tap to view")
         .onTapGesture {
             if let idStr = payload.workoutId, let uuid = UUID(uuidString: idStr) {
                 onWorkoutTap?(uuid)
@@ -149,10 +270,12 @@ private struct ExerciseTableBlockView: View {
                     }
                     .font(.callout)
                     .foregroundColor(Theme.textPrimary)
+                    .accessibilityLabel("Set \(set.setNumber ?? 0): \(set.reps.map { "\($0) reps" } ?? "no reps") at \(formatWeight(set.weight, unit: set.unit))")
                 }
             }
         }
         .themeCard()
+        .accessibilityLabel("Exercise table for \(payload.exerciseName ?? "exercise")")
     }
 
     private func formatWeight(_ weight: Double?, unit: String?) -> String {
@@ -211,6 +334,7 @@ private struct ChatMetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .themeCard()
+        .accessibilityLabel("\(metric.title ?? ""): \(metric.value ?? "")")
     }
 }
 
@@ -226,11 +350,131 @@ private struct ChartBlockView_Inner: View {
         switch chartType {
         case "progressTrend":
             ProgressTrendChart(dataPoints: dataPoints)
+                .accessibilityLabel("Chart showing progress trend")
         case "prComparison":
             PRComparisonChart(dataPoints: dataPoints)
+                .accessibilityLabel("Chart showing personal records comparison")
+        case "generic", "custom":
+            GenericChartView(
+                dataPoints: dataPoints,
+                xAxisLabel: payload.xAxisLabel,
+                yAxisLabel: payload.yAxisLabel,
+                chartStyle: payload.chartStyle
+            )
+            .accessibilityLabel("Chart showing \(payload.yAxisLabel ?? "data")")
         default:
             VolumeOverTimeChart(dataPoints: dataPoints)
+                .accessibilityLabel("Chart showing volume trend")
         }
+    }
+}
+
+// MARK: - Generic Chart
+
+private struct GenericChartView: View {
+    let dataPoints: [ChartDataPoint]
+    var xAxisLabel: String?
+    var yAxisLabel: String?
+    var chartStyle: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let yLabel = yAxisLabel {
+                Text(yLabel)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            if dataPoints.isEmpty {
+                emptyChartState
+            } else if chartStyle == "line" {
+                lineChart
+            } else {
+                barChart
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Theme.cardBackground)
+        )
+    }
+
+    private var lineChart: some View {
+        Chart(dataPoints) { point in
+            LineMark(
+                x: .value(xAxisLabel ?? "X", point.label),
+                y: .value(yAxisLabel ?? "Y", point.value)
+            )
+            .foregroundStyle(.green)
+            .lineStyle(StrokeStyle(lineWidth: 2))
+
+            PointMark(
+                x: .value(xAxisLabel ?? "X", point.label),
+                y: .value(yAxisLabel ?? "Y", point.value)
+            )
+            .foregroundStyle(.green)
+            .symbolSize(30)
+        }
+        .frame(height: 150)
+        .chartXAxisLabel(xAxisLabel ?? "")
+        .chartYAxisLabel(yAxisLabel ?? "")
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: 5)) { _ in
+                AxisValueLabel()
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading) { _ in
+                AxisGridLine()
+                    .foregroundStyle(Color.white.opacity(0.1))
+                AxisValueLabel()
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+    }
+
+    private var barChart: some View {
+        Chart(dataPoints) { point in
+            BarMark(
+                x: .value(xAxisLabel ?? "X", point.label),
+                y: .value(yAxisLabel ?? "Y", point.value)
+            )
+            .foregroundStyle(.green)
+            .cornerRadius(4)
+        }
+        .frame(height: 150)
+        .chartXAxisLabel(xAxisLabel ?? "")
+        .chartYAxisLabel(yAxisLabel ?? "")
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: 5)) { _ in
+                AxisValueLabel()
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading) { _ in
+                AxisGridLine()
+                    .foregroundStyle(Color.white.opacity(0.1))
+                AxisValueLabel()
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+    }
+
+    private var emptyChartState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "chart.bar")
+                .font(.title2)
+                .foregroundColor(.gray)
+            Text("Not enough data yet")
+                .font(.caption)
+                .foregroundColor(.gray)
+        }
+        .frame(height: 120)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -294,6 +538,7 @@ private struct ActionButtonsBlockView: View {
                                 .padding(.vertical, 8)
                                 .background(Theme.accentSubtle, in: Capsule())
                         }
+                        .accessibilityLabel(action.label)
                     }
                 }
             }
@@ -346,6 +591,8 @@ private struct WorkoutListBlockView: View {
                         }
                         .themeCard()
                     }
+                    .accessibilityLabel("\(workout.date ?? "") \(workout.summary ?? "") \(workout.volume.map { formatVolume($0) } ?? "")")
+                    .accessibilityHint("Double tap to view")
                 }
             }
         }
