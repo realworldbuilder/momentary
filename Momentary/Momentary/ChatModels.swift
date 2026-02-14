@@ -2,58 +2,36 @@ import Foundation
 
 // MARK: - Chat Message
 
-struct ChatMessage: Identifiable, Codable {
+struct ChatMessage: Identifiable {
     let id: UUID
     var role: ChatRole
     var blocks: [ChatBlock]
     var timestamp: Date
     var isLoading: Bool
-    var isStreaming: Bool
-    var suggestedFollowups: [String]?
 
     init(
         id: UUID = UUID(),
         role: ChatRole,
         blocks: [ChatBlock] = [],
         timestamp: Date = Date(),
-        isLoading: Bool = false,
-        isStreaming: Bool = false,
-        suggestedFollowups: [String]? = nil
+        isLoading: Bool = false
     ) {
         self.id = id
         self.role = role
         self.blocks = blocks
         self.timestamp = timestamp
         self.isLoading = isLoading
-        self.isStreaming = isStreaming
-        self.suggestedFollowups = suggestedFollowups
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id, role, blocks, timestamp, suggestedFollowups
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        role = try container.decode(ChatRole.self, forKey: .role)
-        blocks = try container.decode([ChatBlock].self, forKey: .blocks)
-        timestamp = try container.decode(Date.self, forKey: .timestamp)
-        suggestedFollowups = try container.decodeIfPresent([String].self, forKey: .suggestedFollowups)
-        isLoading = false
-        isStreaming = false
     }
 }
 
-enum ChatRole: String, Codable {
+enum ChatRole {
     case user
     case assistant
-    case system
 }
 
 // MARK: - Chat Block
 
-struct ChatBlock: Identifiable, Codable {
+struct ChatBlock: Identifiable {
     let id: UUID
     var type: ChatBlockType
     var payload: ChatBlockPayload
@@ -74,7 +52,6 @@ enum ChatBlockType: String, Codable {
     case insight
     case actionButtons
     case workoutList
-    case error
 }
 
 // MARK: - Chat Block Payload (all-optional flat struct)
@@ -102,9 +79,6 @@ struct ChatBlockPayload: Codable {
     // chart
     var chartType: String?
     var dataPoints: [ChatChartPoint]?
-    var xAxisLabel: String?
-    var yAxisLabel: String?
-    var chartStyle: String?
 
     // insight
     var insightType: String?
@@ -116,11 +90,6 @@ struct ChatBlockPayload: Codable {
 
     // workoutList
     var workouts: [ChatWorkoutListItem]?
-
-    // error
-    var errorType: String?
-    var errorMessage: String?
-    var retryAfterSeconds: Double?
 }
 
 // MARK: - Supporting Types
@@ -194,7 +163,6 @@ struct ChatWorkoutListItem: Codable, Identifiable {
 
 struct ChatAPIResponse: Codable {
     var blocks: [ChatAPIBlock]?
-    var suggestedFollowups: [String]?
 }
 
 struct ChatAPIBlock: Codable {
@@ -204,44 +172,5 @@ struct ChatAPIBlock: Codable {
     func toChatBlock() -> ChatBlock? {
         guard let typeStr = type, let blockType = ChatBlockType(rawValue: typeStr) else { return nil }
         return ChatBlock(type: blockType, payload: payload ?? ChatBlockPayload())
-    }
-}
-
-// MARK: - Chat History (Persistence)
-
-struct ChatHistory: Codable {
-    var version: Int = 1
-    var messages: [ChatMessage]
-}
-
-// MARK: - Token Usage
-
-struct TokenUsage: Codable {
-    var promptTokens: Int = 0
-    var completionTokens: Int = 0
-    var totalTokens: Int = 0
-
-    var formattedTotal: String {
-        if totalTokens >= 1000 {
-            return String(format: "%.1fK tokens", Double(totalTokens) / 1000.0)
-        }
-        return "\(totalTokens) tokens"
-    }
-
-    // GPT-4o pricing: $2.50/1M input, $10.00/1M output
-    var formattedCost: String {
-        let inputCost = Double(promptTokens) / 1_000_000.0 * 2.50
-        let outputCost = Double(completionTokens) / 1_000_000.0 * 10.00
-        let total = inputCost + outputCost
-        if total < 0.01 {
-            return String(format: "$%.4f", total)
-        }
-        return String(format: "$%.2f", total)
-    }
-
-    mutating func accumulate(_ other: TokenUsage) {
-        promptTokens += other.promptTokens
-        completionTokens += other.completionTokens
-        totalTokens += other.totalTokens
     }
 }

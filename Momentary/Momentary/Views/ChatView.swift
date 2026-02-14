@@ -21,12 +21,9 @@ struct ChatView: View {
                 inputBar
             }
             .background(Theme.background)
+            .navigationTitle("Chat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    tokenTitleView
-                }
-
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
                         SettingsView()
@@ -34,18 +31,16 @@ struct ChatView: View {
                         Image(systemName: "gearshape")
                             .foregroundColor(Theme.textSecondary)
                     }
-                    .accessibilityLabel("Settings")
                 }
 
                 if !chatService.messages.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            chatService.newChat()
+                            chatService.clearConversation()
                         } label: {
-                            Image(systemName: "square.and.pencil")
+                            Image(systemName: "trash")
                                 .foregroundColor(Theme.textSecondary)
                         }
-                        .accessibilityLabel("New conversation")
                     }
                 }
             }
@@ -56,31 +51,6 @@ struct ChatView: View {
                 if let data = exportData {
                     ShareSheet(data: data)
                 }
-            }
-            .onChange(of: workoutManager.activeSession?.id) { oldValue, newValue in
-                if oldValue != nil && newValue == nil {
-                    // Workout just ended
-                    let notification = ChatMessage(
-                        role: .system,
-                        blocks: [ChatBlock(type: .text, payload: ChatBlockPayload(text: "Workout completed! Ask me about your latest session."))]
-                    )
-                    chatService.messages.append(notification)
-                }
-            }
-        }
-    }
-
-    // MARK: - Token Title View
-
-    private var tokenTitleView: some View {
-        VStack(spacing: 1) {
-            Text("Chat")
-                .font(.headline)
-                .foregroundColor(Theme.textPrimary)
-            if chatService.sessionTokenUsage.totalTokens > 0 {
-                Text("\(chatService.sessionTokenUsage.formattedTotal) (\(chatService.sessionTokenUsage.formattedCost))")
-                    .font(.caption2)
-                    .foregroundColor(Theme.textTertiary)
             }
         }
     }
@@ -98,7 +68,6 @@ struct ChatView: View {
             Text("What would you like to know?")
                 .font(.title3)
                 .foregroundColor(Theme.textSecondary)
-                .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 SuggestedChip(text: "Start Workout", icon: "figure.strengthtraining.traditional") {
@@ -130,51 +99,22 @@ struct ChatView: View {
                         ChatMessageView(
                             message: message,
                             onAction: { action in handleAction(action) },
-                            onWorkoutTap: { id in navigationPath.append(id) },
-                            onRetry: { chatService.retryLastMessage() },
-                            onOpenSettings: { navigationPath.append(UUID()) } // Navigate to settings handled below
+                            onWorkoutTap: { id in navigationPath.append(id) }
                         )
                         .id(message.id)
-                    }
-
-                    // Follow-up chips
-                    if let chips = followupChips {
-                        FollowupChipsView(chips: chips) { text in
-                            sendMessage(text)
-                        }
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
             .onChange(of: chatService.messages.count) {
-                scrollToBottom(proxy: proxy)
-            }
-            .onChange(of: chatService.messages.last?.blocks.first?.payload.text) {
-                scrollToBottom(proxy: proxy)
-            }
-        }
-    }
-
-    private func scrollToBottom(proxy: ScrollViewProxy) {
-        if let lastID = chatService.messages.last?.id {
-            withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo(lastID, anchor: .bottom)
+                if let lastID = chatService.messages.last?.id {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        proxy.scrollTo(lastID, anchor: .bottom)
+                    }
+                }
             }
         }
-    }
-
-    // MARK: - Follow-up Chips
-
-    private var followupChips: [String]? {
-        guard !chatService.isResponding,
-              let lastMessage = chatService.messages.last,
-              lastMessage.role == .assistant,
-              let followups = lastMessage.suggestedFollowups,
-              !followups.isEmpty else {
-            return nil
-        }
-        return followups
     }
 
     // MARK: - Input Bar
@@ -196,7 +136,6 @@ struct ChatView: View {
                     .foregroundColor(inputText.trimmingCharacters(in: .whitespaces).isEmpty ? Theme.textTertiary : Theme.accent)
             }
             .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || chatService.isResponding)
-            .accessibilityLabel("Send message")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -209,14 +148,12 @@ struct ChatView: View {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         inputText = ""
-        HapticService.light()
         Task {
             await chatService.send(trimmed)
         }
     }
 
     private func handleAction(_ action: ChatAction) {
-        HapticService.medium()
         switch action.actionType {
         case .startWorkout:
             workoutManager.startWorkout()
@@ -235,39 +172,6 @@ struct ChatView: View {
                 exportData = data
                 showExportSheet = true
             }
-        }
-    }
-}
-
-// MARK: - Follow-up Chips View
-
-private struct FollowupChipsView: View {
-    let chips: [String]
-    let onTap: (String) -> Void
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(chips, id: \.self) { text in
-                    Button {
-                        onTap(text)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.turn.down.right")
-                                .font(.caption2)
-                            Text(text)
-                                .font(.subheadline)
-                        }
-                        .foregroundColor(Theme.accent)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Theme.accentSubtle, in: Capsule())
-                    }
-                    .accessibilityLabel(text)
-                    .accessibilityHint("Sends '\(text)' as a question")
-                }
-            }
-            Spacer()
         }
     }
 }
