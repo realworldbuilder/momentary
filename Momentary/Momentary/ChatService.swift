@@ -376,6 +376,81 @@ final class ChatService {
         }
     }
 
+    // MARK: - Chat History Browser
+
+    func listArchivedChats() -> [ChatArchiveEntry] {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: chatArchivesDirectory.path) else { return [] }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let dateFormatter = ISO8601DateFormatter()
+
+        guard let files = try? fm.contentsOfDirectory(at: chatArchivesDirectory, includingPropertiesForKeys: nil) else {
+            return []
+        }
+
+        return files.compactMap { url -> ChatArchiveEntry? in
+            guard url.pathExtension == "json" else { return nil }
+            guard let data = try? Data(contentsOf: url),
+                  let history = try? decoder.decode(ChatHistory.self, from: data) else {
+                return nil
+            }
+
+            let filename = url.deletingPathExtension().lastPathComponent
+            // Filename format: chat_YYYY-MM-DDTHH-MM-SSZ → need YYYY-MM-DDTHH:MM:SSZ
+            let rawTimestamp = filename.replacingOccurrences(of: "chat_", with: "")
+            let timestamp: Date
+            // The format is like 2025-01-15T10-30-00Z — dashes in time portion
+            // We need to convert back to 2025-01-15T10:30:00Z
+            if rawTimestamp.count >= 20 {
+                let idx10 = rawTimestamp.index(rawTimestamp.startIndex, offsetBy: 13)
+                let idx13 = rawTimestamp.index(rawTimestamp.startIndex, offsetBy: 16)
+                var fixed = rawTimestamp
+                fixed.replaceSubrange(idx10...idx10, with: ":")
+                fixed.replaceSubrange(idx13...idx13, with: ":")
+                timestamp = dateFormatter.date(from: fixed) ?? Date()
+            } else {
+                timestamp = history.messages.first?.timestamp ?? Date()
+            }
+
+            let firstUserMessage = history.messages.first(where: { $0.role == .user })
+            let previewText = firstUserMessage?.blocks.first?.payload.text ?? "No preview"
+            let preview = previewText.count > 60 ? String(previewText.prefix(60)) + "…" : previewText
+
+            return ChatArchiveEntry(
+                id: filename,
+                timestamp: timestamp,
+                preview: preview,
+                messageCount: history.messages.count,
+                fileURL: url
+            )
+        }
+        .sorted { $0.timestamp > $1.timestamp }
+    }
+
+    func loadArchivedChat(_ entry: ChatArchiveEntry) {
+        // Archive current chat if non-empty
+        if !messages.isEmpty {
+            archiveCurrentChat()
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        guard let data = try? Data(contentsOf: entry.fileURL),
+              let history = try? decoder.decode(ChatHistory.self, from: data) else {
+            Self.logger.warning("Failed to load archived chat: \(entry.id)")
+            return
+        }
+
+        messages = history.messages
+        sessionTokenUsage = TokenUsage()
+        lastError = nil
+        saveChatHistory()
+    }
+
     private func archiveCurrentChat() {
         let fm = FileManager.default
         if !fm.fileExists(atPath: chatArchivesDirectory.path) {

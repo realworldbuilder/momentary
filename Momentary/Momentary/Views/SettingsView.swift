@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var customAPIKey: String = ""
     @State private var showAPIKeyField = false
     @State private var apiKeySaved = false
+    @State private var sampleDataLoaded = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
@@ -111,6 +112,29 @@ struct SettingsView: View {
                 Text("OpenAI")
             } footer: {
                 Text("Custom keys are stored securely in the iOS Keychain.")
+            }
+
+            // MARK: - Developer
+            Section {
+                Button {
+                    SampleDataGenerator.generateSampleWorkouts(store: workoutManager.workoutStore)
+                    sampleDataLoaded = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        sampleDataLoaded = false
+                    }
+                } label: {
+                    Label("Load Sample Workouts", systemImage: "dumbbell.fill")
+                }
+
+                if sampleDataLoaded {
+                    Text("7 sample workouts loaded!")
+                        .font(.caption)
+                        .foregroundStyle(Theme.accent)
+                }
+            } header: {
+                Text("Developer")
+            } footer: {
+                Text("Generates 7 sample workouts over the past 3 weeks for testing.")
             }
 
             // MARK: - About
