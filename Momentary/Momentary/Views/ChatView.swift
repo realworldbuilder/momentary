@@ -8,7 +8,6 @@ struct ChatView: View {
     @State private var navigationPath = NavigationPath()
     @State private var showExportSheet = false
     @State private var exportData: Data?
-    @State private var showChatHistory = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -38,25 +37,15 @@ struct ChatView: View {
                     .accessibilityLabel("Settings")
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 12) {
+                if !chatService.messages.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            showChatHistory = true
+                            chatService.newChat()
                         } label: {
-                            Image(systemName: "clock.arrow.circlepath")
+                            Image(systemName: "square.and.pencil")
                                 .foregroundColor(Theme.textSecondary)
                         }
-                        .accessibilityLabel("Chat history")
-
-                        if !chatService.messages.isEmpty {
-                            Button {
-                                chatService.newChat()
-                            } label: {
-                                Image(systemName: "square.and.pencil")
-                                    .foregroundColor(Theme.textSecondary)
-                            }
-                            .accessibilityLabel("New conversation")
-                        }
+                        .accessibilityLabel("New conversation")
                     }
                 }
             }
@@ -67,9 +56,6 @@ struct ChatView: View {
                 if let data = exportData {
                     ShareSheet(data: data)
                 }
-            }
-            .sheet(isPresented: $showChatHistory) {
-                ChatHistorySheet(chatService: chatService)
             }
             .onChange(of: workoutManager.activeSession?.id) { oldValue, newValue in
                 if oldValue != nil && newValue == nil {
@@ -307,112 +293,6 @@ private struct SuggestedChip: View {
             .padding(.vertical, 12)
             .background(Theme.accentSubtle, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
         }
-    }
-}
-
-// MARK: - Chat History Sheet
-
-private struct ChatHistorySheet: View {
-    let chatService: ChatService
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            Group {
-                let archives = chatService.listArchivedChats()
-                if archives.isEmpty {
-                    emptyState
-                } else {
-                    archiveList(archives)
-                }
-            }
-            .background(Theme.background)
-            .navigationTitle("Chat History")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.background, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(Theme.accent)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        chatService.newChat()
-                        dismiss()
-                    } label: {
-                        Image(systemName: "square.and.pencil")
-                            .foregroundColor(Theme.textSecondary)
-                    }
-                    .accessibilityLabel("New conversation")
-                }
-            }
-        }
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 40))
-                .foregroundColor(Theme.textTertiary)
-            Text("No chat history yet")
-                .font(.title3)
-                .foregroundColor(Theme.textSecondary)
-            Text("Past conversations will appear here\nwhen you start a new chat.")
-                .font(.subheadline)
-                .foregroundColor(Theme.textTertiary)
-                .multilineTextAlignment(.center)
-            Spacer()
-        }
-    }
-
-    private func archiveList(_ archives: [ChatArchiveEntry]) -> some View {
-        ScrollView {
-            LazyVStack(spacing: 10) {
-                ForEach(archives) { entry in
-                    Button {
-                        chatService.loadArchivedChat(entry)
-                        dismiss()
-                    } label: {
-                        archiveCard(entry)
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-    }
-
-    private func archiveCard(_ entry: ChatArchiveEntry) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(entry.preview)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(Theme.textPrimary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-
-            HStack {
-                Text(relativeTimestamp(entry.timestamp))
-                    .font(.caption)
-                    .foregroundColor(Theme.textTertiary)
-
-                Spacer()
-
-                Text("\(entry.messageCount) message\(entry.messageCount == 1 ? "" : "s")")
-                    .font(.caption)
-                    .foregroundColor(Theme.textTertiary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
-    }
-
-    private func relativeTimestamp(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
 

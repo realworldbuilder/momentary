@@ -214,16 +214,6 @@ struct ChatHistory: Codable {
     var messages: [ChatMessage]
 }
 
-// MARK: - Chat Archive Entry
-
-struct ChatArchiveEntry: Identifiable {
-    let id: String          // filename
-    let timestamp: Date
-    let preview: String     // first user message, truncated to 60 chars
-    let messageCount: Int
-    let fileURL: URL
-}
-
 // MARK: - Token Usage
 
 struct TokenUsage: Codable {
